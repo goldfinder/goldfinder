@@ -1,5 +1,5 @@
 local FSC = 1
-local FSCurr
+local FSCurr = "Semi" --Remember to check this.
 Local FSSettings = {}
 FSSettings.Changeable = true
 FSSettings.FullAuto = true
