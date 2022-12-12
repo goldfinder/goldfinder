@@ -23,3 +23,4 @@ for i=1,6 do
   if FSC == 5 and FSSettings.RPG == true then FSCurr = "RPG" CONTLOOP = true end
   if FSC == 6 and FSSettings.Shotgun == true then FSCurr = "Shot" CONTLOOP = true end
   if FSC == 7 and FSSettings.GL == true then FSCurr = "GL" CONTLOOP = true end
+end
