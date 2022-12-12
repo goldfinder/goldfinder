@@ -24,4 +24,4 @@ for i=1,6 do
   if FSC == 6 and FSSettings.Shotgun == true then FSCurr = "Shot" CONTLOOP = true end
   if FSC == 7 and FSSettings.GL == true then FSCurr = "GL" CONTLOOP = true end
 end
-if CONTLOOP == false then FSSettingsChangeable = false end
+if CONTLOOP == false then FSSettings.Changeable = false end
