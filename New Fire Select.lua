@@ -1,0 +1,9 @@
+local FSC = 1
+Local FSSettings = {}
+FSSettings.Changeable = true
+FSSettings.FullAuto = true
+FSSettings.Semi = true
+FSSettings.Bolt = true
+FSSettings.RPG = true
+FSSettings.Shotgun = true
+FSSettings.GL = true
