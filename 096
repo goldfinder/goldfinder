@@ -1,5 +1,750 @@
 -- Converted using Mokiros's Model to Script Version 3
--- Converted string size: 12044 characters
+-- Converted string size: 6700 characters
+
+local ScriptFunctions = {
+function(script,require)
+function onTouched(hit)
+        local human = hit.Parent:findFirstChild("Humanoid")
+        if (human ~= nil) then
+                human.Health = human.Health - 100 -- Change the amount to change the damage.
+        end
+end
+script.Parent.Touched:connect(onTouched)
+end,
+function(script,require)
+--Made by samtheblender
+local FlingAmount = 175
+function hit(Touch) 
+local blender = Touch.Parent:FindFirstChild("Head") 
+if not (blender == nil) then
+local bv = Instance.new("BodyVelocity")
+bv.P = 500
+bv.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+bv.Velocity = blender.CFrame.lookVector*-FlingAmount
+bv.Parent = blender
+wait(.05)
+bv:Destroy()
+wait(.2)
+end
+end
+script.Parent.Touched:connect(hit)
+end,
+function(script,require)
+script.Parent.Touched:Connect(function(touch)
+	local copy = script.JumpscareGui:Clone()
+	if touch.Parent:FindFirstChild("Humanoid") then
+		local player = touch.Parent.Name
+		copy.Parent = game:GetService("Players")[player].PlayerGui
+		copy.Enabled = true
+		copy.Frame.ImageLabel.Script.Enabled = true
+		touch.Parent:FindFirstChild("Humanoid").Health = 0
+	else
+	end
+	wait()
+	script.Enabled = false
+	wait(1)
+	script.Enabled = true
+end)
+end,
+function(script,require)
+script:FindFirstChild("Jumpscare1"):Play()
+wait(.2)
+script:FindFirstChild("Jumpscare1").Pitch = .5
+wait(.1)
+script:FindFirstChild("Jumpscare1").Pitch = .7
+wait(.4)
+script:FindFirstChild("Jumpscare1").Pitch = .48
+wait(1)
+script:FindFirstChild("Jumpscare1"):Stop()
+for i = 1,5 do
+	local size_ = script.Parent.Size
+	local number = math.random(0,25)
+	local number2 = math.random(0,10)
+	script.Parent.Size = UDim2.new(size_.X.Scale,size_.X.Offset-25,size_.Y.Scale,size_.Y.Offset-25)
+	script.Parent.Rotation = math.random(-5,5)
+	script.Parent.Parent.BackgroundColor3 = Color3.fromRGB(0,number,number2)
+	wait(0)
+end
+script:FindFirstChild("Jumpscare1").PlaybackSpeed = 0.75
+for i = 1,10 do
+	local size_ = script.Parent.Size
+	local number = math.random(0,50)
+	local number2 = math.random(0,25)
+	script.Parent.Rotation = math.random(-5,5)
+	script.Parent.Parent.BackgroundColor3 = Color3.fromRGB(0,number,number2)
+	wait(0)
+end
+script:FindFirstChild("Jumpscare2"):Play()
+for i = 1,100 do
+	local size_ = script.Parent.Size
+	local number = math.random(0,255)
+	local number2 = math.random(0,50)
+	script.Parent.Size = UDim2.new(size_.X.Scale,size_.X.Offset*1.75,size_.Y.Scale,size_.Y.Offset*1.75)
+	script.Parent.Rotation = math.random(-5,5)
+	script.Parent.Parent.BackgroundColor3 = Color3.fromRGB(0,number,number2)
+	wait(0)
+end
+script.Parent.Parent.Parent:Remove()
+end,
+function(script,require)
+while true do
+	script.Parent.Sound:Play()
+	script.Parent.Sound3:Play()
+	wait(4)
+	script.Parent.Sound2:Play()
+	script.Parent.Sound:Stop()
+	script.Parent.Sound3:Stop()
+	wait(2)
+	script.Parent.Sound2:Stop()
+	wait(9999999999)
+end
+end,
+function(script,require)
+debugMode = false
+targetNPCs = false
+
+--
+
+h = script.Parent.Parent:WaitForChild("Humanoid")
+pathService = game:GetService("PathfindingService")
+targetV = script.Parent:WaitForChild("Target")
+
+function closestTargetAndPath()
+	local humanoids = {}
+	if targetNPCs then
+		local function recurse(o)
+			for _,obj in pairs(o:GetChildren()) do
+				if obj:IsA("Model") then
+					if obj:findFirstChild("Humanoid") and obj:findFirstChild("Torso") and obj.Humanoid ~= h and obj.Humanoid.Health > 0 and not obj:findFirstChild("ForceField") then
+						table.insert(humanoids,obj.Humanoid)
+					end
+				end
+				recurse(obj)
+			end
+		end
+		recurse(workspace)
+	else
+		for _,v in pairs(game.Players:GetPlayers()) do
+			if v.Character and v.Character:findFirstChild("HumanoidRootPart") and v.Character:findFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 and not v:findFirstChild("ForceField") then
+				table.insert(humanoids,v.Character.Humanoid)
+			end
+		end
+	end
+	local closest,path,dist
+	for _,humanoid in pairs(humanoids) do
+		local myPath = pathService:ComputeRawPathAsync(h.Torso.Position,humanoid.Torso.Position,500)
+		if myPath.Status ~= Enum.PathStatus.FailFinishNotEmpty then
+			-- Now that we have a successful path, we need to figure out how far we need to actually travel to reach this point.
+			local myDist = 0
+			local previous = h.Torso.Position
+			for _,point in pairs(myPath:GetPointCoordinates()) do
+				myDist = myDist + (point-previous).magnitude
+				previous = point
+			end
+			if not dist or myDist < dist then -- if true, this is the closest path so far.
+				closest = humanoid
+				path = myPath
+				dist = myDist
+			end
+		end
+	end
+	return closest,path
+end
+
+function goToPos(loc)
+	h:MoveTo(loc)
+	local distance = (loc-h.Torso.Position).magnitude
+	local start = tick()
+	while distance > 4 do
+		if tick()-start > distance/h.WalkSpeed then -- Something may have gone wrong. Just break.
+			break
+		end
+		distance = (loc-h.Torso.Position).magnitude
+		wait()
+	end
+end
+
+while wait() do
+	local target,path = closestTargetAndPath()
+	local didBreak = false
+	local targetStart
+	if target and h.Torso then
+		targetV.Value = target
+		targetStart = target.Torso.Position
+		roaming = false
+		local previous = h.Torso.Position
+		local points = path:GetPointCoordinates()
+		local s = #points > 1 and 2 or 1
+		for i = s,#points do
+			local point = points[i]
+			if didBreak then 
+				break
+			end
+			if target and target.Torso and target.Health > 0 then
+				if (target.Torso.Position-targetStart).magnitude < 1.5 then
+					local pos = previous:lerp(point,.5)
+					local moveDir = ((pos - h.Torso.Position).unit * 2)
+					goToPos(previous:lerp(point,.5))
+					previous = point
+				end
+			else
+				didBreak = true
+				break
+			end
+		end
+	else
+		targetV.Value = nil
+	end
+	if not didBreak and targetStart then
+		goToPos(targetStart)
+	end
+end
+end,
+function(script,require)
+local target = script.Parent:WaitForChild("Target")
+local torso = script.Parent.Parent:WaitForChild("Torso")
+local down = script.Parent:WaitForChild("MouseDown")
+
+function handler(new)
+	if target.Value then
+		while target.Value == new do
+			if target.Value and target.Value.Parent == nil then
+				target.Value = nil
+				return
+			end
+			local look = (new.Torso.Position-torso.Position).unit * 300
+			local hit = workspace:FindPartOnRayWithIgnoreList(Ray.new(torso.Position,look),{script.Parent.Parent,new.Parent})
+			if not hit or (new.Torso.Position-torso.Position).magnitude < 10 then
+				down:Fire(new.Torso.Position)
+			end
+			wait(0.2)
+		end
+	end
+end
+
+target.Changed:connect(handler)
+
+if target.Value then
+	handler(target.Value)
+end
+end,
+function(script,require)
+--[[
+	Basic Monster by ArceusInator
+
+	Information:
+		Configurations.MaximumDetectionDistance (default 200)
+			The monster will not detect players past this point.  If you set it to a negative number then the monster will be able to chase from any distance.
+			
+		Configurations.CanGiveUp (default true)
+			If true, the monster will give up if its target goes past the MaximumDetectionDistance.  This is a pretty good idea if you have people teleporting around.
+			
+		Configurations.CanRespawn (default true)
+			If true, the monster will respawn after it dies
+			
+		Configurations.AutoDetectSpawnPoint (default true)
+			If true, the spawn point will be auto detected based on where the monster is when it starts
+		
+		Configurations.SpawnPoint (default 0,0,0)
+			If Settings.AutoDetectSpawnPoint is disabled, this will be set to the monster's initial position.  This value will be used when the monster auto respawns to tell it where to spawn next.
+			
+		Configurations.FriendlyTeam (default Really black)
+			The monster will not attack players on this team
+		
+		
+		
+		Mind.CurrentTargetHumanoid (Humanoid objects only)
+			You can force the monster to follow a certain humanoid by setting this to that humanoid
+		
+		
+		
+		Monster.Respawn (Function)
+			Arguments are: Vector3 point
+			Info: Respawns the monster at the given point, or at the SpawnPoint setting if none if provided
+		
+		Monster.Died (Event)
+			Info: Fired when the monster dies
+		
+		Monster.Respawned (Event)
+			Info: Fired when the monster respawns
+--]]
+
+local Self = script.Parent
+local Settings = Self:FindFirstChild'Configurations' -- Points to the settings.
+local Mind = Self:FindFirstChild'Mind' -- Points to the monster's mind.  You can edit parts of this from other scripts in-game to change the monster's behavior.  Advanced users only.
+
+--
+-- Verify that everything is where it should be
+assert(Self:FindFirstChild'Humanoid' ~= nil, 'Monster does not have a humanoid')
+assert(Settings ~= nil, 'Monster does not have a Configurations object')
+	assert(Settings:FindFirstChild'MaximumDetectionDistance' ~= nil and Settings.MaximumDetectionDistance:IsA'NumberValue', 'Monster does not have a MaximumDetectionDistance (NumberValue) setting')
+	assert(Settings:FindFirstChild'CanGiveUp' ~= nil and Settings.CanGiveUp:IsA'BoolValue', 'Monster does not have a CanGiveUp (BoolValue) setting')
+	assert(Settings:FindFirstChild'CanRespawn' ~= nil and Settings.CanRespawn:IsA'BoolValue', 'Monster does not have a CanRespawn (BoolValue) setting')
+	assert(Settings:FindFirstChild'SpawnPoint' ~= nil and Settings.SpawnPoint:IsA'Vector3Value', 'Monster does not have a SpawnPoint (Vector3Value) setting')
+	assert(Settings:FindFirstChild'AutoDetectSpawnPoint' ~= nil and Settings.AutoDetectSpawnPoint:IsA'BoolValue', 'Monster does not have a AutoDetectSpawnPoint (BoolValue) setting')
+	assert(Settings:FindFirstChild'FriendlyTeam' ~= nil and Settings.FriendlyTeam:IsA'BrickColorValue', 'Monster does not have a FriendlyTeam (BrickColorValue) setting')
+	assert(Settings:FindFirstChild'AttackDamage' ~= nil and Settings.AttackDamage:IsA'NumberValue', 'Monster does not have a AttackDamage (NumberValue) setting')
+	assert(Settings:FindFirstChild'AttackFrequency' ~= nil and Settings.AttackFrequency:IsA'NumberValue', 'Monster does not have a AttackFrequency (NumberValue) setting')
+	assert(Settings:FindFirstChild'AttackRange' ~= nil and Settings.AttackRange:IsA'NumberValue', 'Monster does not have a AttackRange (NumberValue) setting')
+assert(Mind ~= nil, 'Monster does not have a Mind object')
+	assert(Mind:FindFirstChild'CurrentTargetHumanoid' ~= nil and Mind.CurrentTargetHumanoid:IsA'ObjectValue', 'Monster does not have a CurrentTargetHumanoid (ObjectValue) mind setting')
+assert(Self:FindFirstChild'Respawn' and Self.Respawn:IsA'BindableFunction', 'Monster does not have a Respawn BindableFunction')
+assert(Self:FindFirstChild'Died' and Self.Died:IsA'BindableEvent', 'Monster does not have a Died BindableEvent')
+assert(Self:FindFirstChild'Respawned' and Self.Died:IsA'BindableEvent', 'Monster does not have a Respawned BindableEvent')
+assert(Self:FindFirstChild'Attacked' and Self.Died:IsA'BindableEvent', 'Monster does not have a Attacked BindableEvent')
+assert(script:FindFirstChild'Attack' and script.Attack:IsA'Animation', 'Monster does not have a MonsterScript.Attack Animation')
+
+
+--
+--
+local Info = {
+	-- These are constant values.  Don't change them unless you know what you're doing.
+
+	-- Services
+	Players = Game:GetService 'Players',
+	PathfindingService = Game:GetService 'PathfindingService',
+
+	-- Advanced settings
+	RecomputePathFrequency = 1, -- The monster will recompute its path this many times per second
+	RespawnWaitTime = 5, -- How long to wait before the monster respawns
+	JumpCheckFrequency = 1, -- How many times per second it will do a jump check
+}
+local Data = {
+	-- These are variable values used internally by the script.  Advanced users only.
+
+	LastRecomputePath = 0,
+	Recomputing = false, -- Reocmputing occurs async, meaning this script will still run while it's happening.  This variable will prevent the script from running two recomputes at once.
+	PathCoords = {},
+	IsDead = false,
+	TimeOfDeath = 0,
+	CurrentNode = nil,
+	CurrentNodeIndex = 1,
+	AutoRecompute = true,
+	LastJumpCheck = 0,
+	LastAttack = 0,
+	
+	BaseMonster = Self:Clone(),
+	AttackTrack = nil,
+}
+
+--
+--
+local Monster = {} -- Create the monster class
+
+
+function Monster:GetCFrame()
+	-- Returns the CFrame of the monster's humanoidrootpart
+
+	local humanoidRootPart = Self:FindFirstChild('HumanoidRootPart')
+
+	if humanoidRootPart ~= nil and humanoidRootPart:IsA('BasePart') then
+		return humanoidRootPart.CFrame
+	else
+		return CFrame.new()
+	end
+end
+
+function Monster:GetMaximumDetectionDistance()
+	-- Returns the maximum detection distance
+	
+	local setting = Settings.MaximumDetectionDistance.Value
+
+	if setting < 0 then
+		return math.huge
+	else
+		return setting
+	end
+end
+
+function Monster:SearchForTarget()
+	-- Finds the closest player and sets the target
+
+	local players = Info.Players:GetPlayers()
+	local closestCharacter, closestCharacterDistance
+
+	for i=1, #players do
+		local player = players[i]
+		
+		if player.Neutral or player.TeamColor ~= Settings.FriendlyTeam.Value then
+			local character = player.Character
+	
+			if character ~= nil and character:FindFirstChild('Humanoid') ~= nil and character.Humanoid:IsA('Humanoid') then
+				local distance = player:DistanceFromCharacter(Monster:GetCFrame().p)
+	
+				if distance < Monster:GetMaximumDetectionDistance() then
+					if closestCharacter == nil then
+						closestCharacter, closestCharacterDistance = character, distance
+					else
+						if closestCharacterDistance > distance then
+							closestCharacter, closestCharacterDistance = character, distance
+						end
+					end
+				end
+			end
+		end
+	end
+
+
+	if closestCharacter ~= nil then
+		Mind.CurrentTargetHumanoid.Value = closestCharacter.Humanoid
+	end
+end
+
+function Monster:TryRecomputePath()
+	if Data.AutoRecompute or tick() - Data.LastRecomputePath > 1/Info.RecomputePathFrequency then
+		Monster:RecomputePath()
+	end
+end
+
+function Monster:GetTargetCFrame()
+	local targetHumanoid = Mind.CurrentTargetHumanoid.Value
+	
+	if Monster:TargetIsValid() then
+		return targetHumanoid.Torso.CFrame
+	else
+		return CFrame.new()
+	end
+end
+
+function Monster:IsAlive()
+	return Self.Humanoid.Health > 0 and Self.Humanoid.Torso ~= nil
+end
+
+function Monster:TargetIsValid()
+	local targetHumanoid = Mind.CurrentTargetHumanoid.Value
+	
+	if targetHumanoid ~= nil and targetHumanoid:IsA 'Humanoid' and targetHumanoid.Torso ~= nil and targetHumanoid.Torso:IsA 'BasePart' then
+		return true
+	else
+		return false
+	end
+end
+
+function Monster:HasClearLineOfSight()
+	-- Going to cast a ray to see if I can just see my target
+	local myPos, targetPos = Monster:GetCFrame().p, Monster:GetTargetCFrame().p
+	
+	local hit, pos = Workspace:FindPartOnRayWithIgnoreList(
+		Ray.new(
+			myPos,
+			targetPos - myPos
+		),
+		{
+			Self,
+			Mind.CurrentTargetHumanoid.Value.Parent
+		}
+	)
+	
+	
+	if hit == nil then
+		return true
+	else
+		return false
+	end
+end
+
+function Monster:RecomputePath()
+	if not Data.Recomputing then
+		if Monster:IsAlive() and Monster:TargetIsValid() then
+			if Monster:HasClearLineOfSight() then
+				Data.AutoRecompute = true
+				Data.PathCoords = {
+					Monster:GetCFrame().p,
+					Monster:GetTargetCFrame().p
+				}
+				
+				Data.LastRecomputePath = tick()
+				Data.CurrentNode = nil
+				Data.CurrentNodeIndex = 2 -- Starts chasing the target without evaluating its current position
+			else
+				-- Do pathfinding since you can't walk straight
+				Data.Recomputing = true -- Basically a debounce.
+				Data.AutoRecompute = false
+				
+				
+				local path = Info.PathfindingService:ComputeSmoothPathAsync(
+					Monster:GetCFrame().p,
+					Monster:GetTargetCFrame().p,
+					500
+				)
+				Data.PathCoords = path:GetPointCoordinates()
+				
+				
+				Data.Recomputing = false
+				Data.LastRecomputePath = tick()
+				Data.CurrentNode = nil
+				Data.CurrentNodeIndex = 1
+			end
+		end
+	end
+end
+
+function Monster:Update()
+	Monster:ReevaluateTarget()
+	Monster:SearchForTarget()
+	Monster:TryRecomputePath()
+	Monster:TravelPath()
+end
+
+function Monster:TravelPath()
+	local closest, closestDistance, closestIndex
+	local myPosition = Monster:GetCFrame().p
+	local skipCurrentNode = Data.CurrentNode ~= nil and (Data.CurrentNode - myPosition).magnitude < 3
+	
+	for i=Data.CurrentNodeIndex, #Data.PathCoords do
+		local coord = Data.PathCoords[i]
+		if not (skipCurrentNode and coord == Data.CurrentNode) then
+			local distance = (coord - myPosition).magnitude
+			
+			if closest == nil then
+				closest, closestDistance, closestIndex = coord, distance, i
+			else
+				if distance < closestDistance then
+					closest, closestDistance, closestIndex = coord, distance, i
+				else
+					break
+				end
+			end
+		end
+	end
+	
+	
+	--
+	if closest ~= nil then
+		Data.CurrentNode = closest
+		Data.CurrentNodeIndex = closestIndex
+		
+		local humanoid = Self:FindFirstChild 'Humanoid'
+		
+		if humanoid ~= nil and humanoid:IsA'Humanoid' then
+			humanoid:MoveTo(closest)
+		end
+		
+		if Monster:IsAlive() and Monster:TargetIsValid() then
+			Monster:TryJumpCheck()
+			Monster:TryAttack()
+		end
+		
+		if closestIndex == #Data.PathCoords then
+			-- Reached the end of the path, force a new check
+			Data.AutoRecompute = true
+		end
+	end
+end
+
+function Monster:TryJumpCheck()
+	if tick() - Data.LastJumpCheck > 1/Info.JumpCheckFrequency then
+		Monster:JumpCheck()
+	end
+end
+
+function Monster:TryAttack()
+	if tick() - Data.LastAttack > 1/Settings.AttackFrequency.Value then
+		Monster:Attack()
+	end
+end
+
+function Monster:Attack()
+	local myPos, targetPos = Monster:GetCFrame().p, Monster:GetTargetCFrame().p
+	
+	if (myPos - targetPos).magnitude <= Settings.AttackRange.Value then
+		Mind.CurrentTargetHumanoid.Value:TakeDamage(Settings.AttackDamage.Value)
+		Data.LastAttack = tick()
+		Data.AttackTrack:Play()
+	end
+end
+
+function Monster:JumpCheck()
+	-- Do a raycast to check if we need to jump
+	local myCFrame = Monster:GetCFrame()
+	local checkVector = (Monster:GetTargetCFrame().p - myCFrame.p).unit*2
+	
+	local hit, pos = Workspace:FindPartOnRay(
+		Ray.new(
+			myCFrame.p + Vector3.new(0, -2.4, 0),
+			checkVector
+		),
+		Self
+	)
+	
+	if hit ~= nil and not hit:IsDescendantOf(Mind.CurrentTargetHumanoid.Value.Parent) then
+		-- Do a slope check to make sure we're not walking up a ramp
+		
+		local hit2, pos2 = Workspace:FindPartOnRay(
+			Ray.new(
+				myCFrame.p + Vector3.new(0, -2.3, 0),
+				checkVector
+			),
+			Self
+		)
+		
+		if hit2 == hit then
+			if ((pos2 - pos)*Vector3.new(1,0,1)).magnitude < 0.05 then -- Will pass for any ramp with <2 slope
+				Self.Humanoid.Jump = true
+			end
+		end
+	end
+	
+	Data.LastJumpCheck = tick()
+end
+
+function Monster:Connect()
+	Mind.CurrentTargetHumanoid.Changed:connect(function(humanoid)
+		if humanoid ~= nil then
+			assert(humanoid:IsA'Humanoid', 'Monster target must be a humanoid')
+			
+			Monster:RecomputePath()
+		end
+	end)
+	
+	Self.Respawn.OnInvoke = function(point)
+		Monster:Respawn(point)
+	end
+end
+
+function Monster:Initialize()
+	Monster:Connect()
+	
+	if Settings.AutoDetectSpawnPoint.Value then
+		Settings.SpawnPoint.Value = Monster:GetCFrame().p
+	end
+end
+
+function Monster:Respawn(point)
+	local point = point or Settings.SpawnPoint.Value
+	
+	for index, obj in next, Data.BaseMonster:Clone():GetChildren() do
+		if obj.Name == 'Configurations' or obj.Name == 'Mind' or obj.Name == 'Respawned' or obj.Name == 'Died' or obj.Name == 'MonsterScript' or obj.Name == 'Respawn' then
+			obj:Destroy()
+		else
+			Self[obj.Name]:Destroy()
+			obj.Parent = Self
+		end
+	end
+	
+	Monster:InitializeUnique()
+	
+	Self.Parent = Workspace
+	
+	Self.HumanoidRootPart.CFrame = CFrame.new(point)
+	Settings.SpawnPoint.Value = point
+	Self.Respawned:Fire()
+end
+
+function Monster:InitializeUnique()
+	Data.AttackTrack = Self.Humanoid:LoadAnimation(script.Attack)
+end
+
+function Monster:ReevaluateTarget()
+	local currentTarget = Mind.CurrentTargetHumanoid.Value
+	
+	if currentTarget ~= nil and currentTarget:IsA'Humanoid' then
+		local character = currentTarget.Parent
+		
+		if character ~= nil then
+			local player = Info.Players:GetPlayerFromCharacter(character)
+			
+			if player ~= nil then
+				if not player.Neutral and player.TeamColor == Settings.FriendlyTeam.Value then
+					Mind.CurrentTargetHumanoid.Value = nil
+				end
+			end
+		end
+		
+		
+		if currentTarget == Mind.CurrentTargetHumanoid.Value then
+			local torso = currentTarget.Torso
+			
+			if torso ~= nil and torso:IsA 'BasePart' then
+				if Settings.CanGiveUp.Value and (torso.Position - Monster:GetCFrame().p).magnitude > Monster:GetMaximumDetectionDistance() then
+					Mind.CurrentTargetHumanoid.Value = nil
+				end
+			end
+		end
+	end
+end
+
+--
+--
+Monster:Initialize()
+Monster:InitializeUnique()
+
+while true do
+	if not Monster:IsAlive() then
+		if Data.IsDead == false then
+			Data.IsDead = true
+			Data.TimeOfDeath = tick()
+			Self.Died:Fire()
+		end
+		if Data.IsDead == true then
+			if tick()-Data.TimeOfDeath > Info.RespawnWaitTime then
+				Monster:Respawn()
+			end
+		end
+	end
+	
+	if Monster:IsAlive() then
+		Monster:Update()
+	end
+	
+	wait()
+end
+end,
+function(script,require)
+robo=script.Parent:clone()
+
+while true do
+
+	wait(4)
+	if script.Parent == nil then return end
+	if script.Parent.Humanoid == nil then return end
+	if (script.Parent.Humanoid.Health <= 0) then
+
+		robot=robo:clone()
+
+		robot.Parent=script.Parent.Parent
+
+		robot:makeJoints()
+
+		script.Parent:remove()
+
+	end
+
+end
+end
+}
+local ScriptIndex = 0
+local Scripts,ModuleScripts,ModuleCache = {},{},{}
+local _require = require
+function require(obj,...)
+	local index = ModuleScripts[obj]
+	if not index then
+		local a,b = pcall(_require,obj,...)
+		return not a and error(b,2) or b
+	end
+	
+	local res = ModuleCache[index]
+	if res then return res end
+	res = ScriptFunctions[index](obj,require)
+	if res==nil then error("Module code did not return exactly one value",2) end
+	ModuleCache[index] = res
+	return res
+end
+local function Script(obj,ismodule)
+	ScriptIndex = ScriptIndex + 1
+	local t = ismodule and ModuleScripts or Scripts
+	t[obj] = ScriptIndex
+end
+
+function RunScripts()
+	for script, index in pairs(Scripts) do
+		coroutine.wrap(function()
+			ScriptFunctions[index](script, require)
+		end)()
+	end
+end
+
+
 local function Decode(str)
 	local StringLength = #str
 	
@@ -242,67 +987,42 @@ local function Decode(str)
 end
 
 
-local Objects = Decode('AEDyASEFTW9kZWwhBE5hbWUhCkVsIEdvYmxpbm8hC1ByaW1hcnlQYXJ0IQpXb3JsZFBpdm90BJUBlgGXASEKTG9hZE1vZHVsZSEHR29ibGlubyEITWVzaFBhcnQhCExlZnRIYW5kIQpCcmlja0NvbG9yB5oAIQZDRnJhbWUEGACYAZkBIQpDYW5Db2xsaWRlAiEFQ29s'
-..'b3IGjzAwIQhNYXRlcmlhbAMAAAAAAECUQCELT3JpZW50YXRpb24KAAC0wgAAtEIAAAAAIQhQb3NpdGlvbgqYgw3BznXqPwgAvEEhCFJvdGF0aW9uCgAAtMIAAAAAAAC0QiEEU2l6ZQooI5E+oMKCPrCEVz4hBk1lc2hJZCEYcmJ4YXNzZXRpZDovLzEwNjg0NDc3MTE4'
-..'IQhNZXNoU2l6ZQqo14RA0l1vQOJCRUAhB01vdG9yNkQhBUpvaW50IQJDMASaAZsBnAEhAkMxBJ0BngGfASEFUGFydDAhBVBhcnQxIQRIZWFkBCwAoAGhAQpmZnLBAAC0QgAAAAAK8+ETwXRmGUBmeq9BCj0KtMIzs5VCPQq0Qgp5lMA/uRiJP/ed8j8hGHJieGFzc2V0'
-..'aWQ6Ly8xMDY4NDQ3MjkzMAoeRLBBMvd6QX0Q3kEhBVRlZXRoB+kDBDcAogGjAQb/9+IDAAAAAAAAkUAKmplxwa7Hm0K4Hs1ACkRcFsGxwQRAZlyyQQqamVDCw3WNQs3MY0IKYVA0Pk1t+z1GSmU+IRhyYnhhc3NldGlkOi8vMTA2ODQ0Nzc3MTkKCAolQMYg5j/Q3VFA'
-..'IQpNYW51YWxXZWxkIQRXZWxkBKQBpQGmAQSnAagBqQEhB0VhcnJpbmcHAwAERACgAaEBBv/jnAoe5ArB30IlQBHPqkEK2RV/Pnyfaj7KbC0+IRhyYnhhc3NldGlkOi8vMTA2ODQ0NzU5MTIK/HlpQF6/VkDWux5ABKQBqAGpAQSqAagBqQEEqwGsAa0BBK4BrwGwASEM'
-..'RXllYmFsbFJpZ2h0BKQBsQGyAQSzAbQBtQEhC0V5ZWJhbGxMZWZ0BLYBtwG4ASEKQXR0YWNobWVudARTALkBlwEKAAAAuQDm0r4A4GA+IQhCb2R5R3lybwS6AbsBvAEhAUQDAAAAAACAQUAhCU1heFRvcnF1ZQogvL5NgJYYTCC8vk0hAVADAAAAAAAAaUAhDEJpbGxi'
-..'b2FyZEd1aSEGQ2hhdFVJIQdFbmFibGVkIQ5aSW5kZXhCZWhhdmlvcgMAAAAAAADwPyEGQWN0aXZlIiEQQ2xpcHNEZXNjZW5kYW50cwwAAABAyAAAAIA/ZAAhClNpemVPZmZzZXQLAAAAAAAAAD8hC1N0dWRzT2Zmc2V0CgAAAAAAAEA/AAAAACEKSW1hZ2VMYWJlbCEE'
-..'VGFpbCELQW5jaG9yUG9pbnQLAAAAPwAAgD8hFkJhY2tncm91bmRUcmFuc3BhcmVuY3khC0xheW91dE9yZGVyAwAAAAAAAABADAAAAD8AAAAAgD8AAAzNzEw9BQDNzEw9BgAhBUltYWdlIStyYnhhc3NldDovL3RleHR1cmVzL3VpL0luR2FtZUNoYXQvQ2FyZXQucG5n'
-..'IQtJbWFnZUNvbG9yMwbzspIhCUNoYXRGcmFtZSEQQmFja2dyb3VuZENvbG9yMyEMQm9yZGVyQ29sb3IzBhsqNSEPQm9yZGVyU2l6ZVBpeGVsAwAAAAAAAAAADAAAAD8AADMzcz/7/wwAAIA/AAAAAAA/AAAhEUltYWdlVHJhbnNwYXJlbmN5IQhVSUNvcm5lciEMQ29y'
-..'bmVyUmFkaXVzEgAAAAAMACEJVGV4dExhYmVsIQhDaGF0VGV4dCEMQXV0b0xvY2FsaXplCwAAAD8AAAA/DAAAAD8AAAAAAD8AAAwAAIA/AAAAAIA/AAAhBFRleHQhV0JvYiB3YW50cyB0byBtYWtlIGZyaWVuZHMgd2l0aCB0aGF0IFRpbW90aHkgZ3V54oCmIGl04oCZ'
-..'cyBhLSBpdOKAmXMtIGl04oCZcyBhIGJ1ZywgbWFuISEKVGV4dENvbG9yMwZPNTMhClRleHRTY2FsZWQhCFRleHRTaXplAwAAAAAAADBAIRBUZXh0U3Ryb2tlQ29sb3IzBv///yEWVGV4dFN0cm9rZVRyYW5zcGFyZW5jeQMAAABACtfrPyELVGV4dFdyYXBwZWQhCVVJ'
-..'UGFkZGluZyENUGFkZGluZ0JvdHRvbRLNzMw9AAAhC1BhZGRpbmdMZWZ0Es3MTD0AACEMUGFkZGluZ1JpZ2h0IQpQYWRkaW5nVG9wIQxMaXZlRGlhbG9ndWUMAACAP2QAAAAAPzIAIRVMb29rLCBCb2IhIEEgdmlzaXRvciEhEFRleHRUcmFuc3BhcmVuY3khDVJpZ2h0'
-..'VXBwZXJBcm0EogC9AZcBCgAAAAAAALRCAAAAAAodkg3BUJ/qPxP0qUEKd5QcP/5elT6ZaqE+IRhyYnhhc3NldGlkOi8vMTA2ODQ0NzUzNjAK0lAPQa+3iEARvpNABL4BrwGwAQS/Aa8BsAEhDVJpZ2h0TG93ZXJBcm0EqgC9AZcBCppbDcFPn+o/KvalQQp6lBw/EsyM'
-..'PmO1kz4hGHJieGFzc2V0aWQ6Ly8xMDY4NDQ3NTUyMArUUA9Bst6AQCEyh0AhCVJpZ2h0Q3VmZgcbAASyAL0BlwEGhHJsCkZ5DcE9reo/DNekQQqI+DI+XpGXPg81jT4hGHJieGFzc2V0aWQ6Ly8xMDY4NDQ3NTc0NQpQzyNAa7qKQMs+gUAEwAGvAbABBKQBqAGXAQTB'
-..'AagBlwEhCExlZnRGb290BLsAvQGXAQqOGw7B1D/YPfMksUEKJ/idPvo/WD6KBQs/IRhyYnhhc3NldGlkOi8vMTA2ODQ0NzY0MTUKYJaQQFDuRUBUff5ABMIBrwGwAQTDAa8BsAEhDExlZnRVcHBlckFybQTDAL0BlwEKjpENwVCf6j+aALVBCnaUHD/+XpU+mWqhPiEY'
-..'cmJ4YXNzZXRpZDovLzEwNjg0NDc0Mzk3CtFQD0Gvt4hAEb6TQATEAcUBsAEExgHFAbABIQVUb3JzbwTLAL0BlwEKANYLwYzlwD9Aeq9BCpkPdj+gpZA/QIRfPyEYcmJ4YXNzZXRpZDovLzEwNjg0NDczOTg0CnA3YUHDZIRB/ZRMQSEFUGFudHMHYwEE1AC9AZcBBmRW'
-..'UwMAAAAAAICUQApmvwzBbi2PP0N6r0EKii5RP+kUzT6HURg/IRhyYnhhc3NldGlkOi8vMTA2ODQ0NzQyMTgKJnY/QXC1u0BMagtBBMcBuQGXAQTIAa8BsAEEyQGoAZcBBN0AuQHKAQoFdnLBAAAAgAAAAAAKAACAuSrKDD8A4Du+IQxMZWZ0TG93ZXJMZWcE4AC9AZcB'
-..'CnR/DMGTBrs+zhOxQQo8Y4A+kkMDP4b3oT4hGHJieGFzc2V0aWQ6Ly8xMDY4NDQ3NjgyOQr2BWtA4EnwQA4/lEAEywGvAbABBMwBrwGwASEMTGVmdFVwcGVyTGVnBOgAvQGXAQrkdgzBjQg/P38UsUEKnZOAPhnr9D5awqg+IRhyYnhhc3NldGlkOi8vMTA2ODQ0Nzcy'
-..'OTEKg15rQLgr4ECWdppAIQlMZWZ0UGFudHME7gC9AZcBCk93DMETj14/3hOxQQpAcaA+WrukPiQ/zz4hGHJieGFzc2V0aWQ6Ly8xMDY4NDQ3NjYwNQrY2ZJA7MaWQLiwvUAEzQGvAbABBM4BrwGwAQTPAagBlwEhCVJpZ2h0Rm9vdAT3AL0BlwEK+hkOwdg/2D0y161B'
-..'CtYGmz7pP1g+/6oKPyEYcmJ4YXNzZXRpZDovLzEwNjg0NDc1MTE4CuDkjUBA7kVAl9f9QATQAbkBlwEE0QG5AZcBIQlSaWdodEhhbmQEAAHSAdMBCgAAtMIfBbRCAAAAAArfhA3BzXXqPyn0okEKAAC0wgAAAAAfBbRCIRhyYnhhc3NldGlkOi8vMTA2ODQ0NzU2MTUE'
-..'1AHVAdYBBNcBngGfASENUmlnaHRVcHBlckxlZwQHAb0BlwEKy3cMwY0IPz+A4K1BCjvWfj4c6/Q+NT2nPiEYcmJ4YXNzZXRpZDovLzEwNjg0NDc3NDU2CsE/aUC8K+BAZxKZQCEKUmlnaHRQYW50cwQNAb0BlwEKYHcMwROPXj+A4K1BChXLuD5au6Q+QNetPiEYcmJ4'
-..'YXNzZXRpZDovLzEwNjg0NDc2MjY5CpcjqUDsxpZASB2fQATYAa8BsAEE2QGoAZcBIQ1SaWdodExvd2VyTGVnBBUBvQGXAQptgAzBkwa7PvzgrUEKYnZ+PpVDAz8KgqA+IRhyYnhhc3NldGlkOi8vMTA2ODQ0NzYxMDUKBuhoQORJ8EA16ZJABNoBrwGwASEMTGVmdExv'
-..'d2VyQXJtBBwBvQGXAQqwWg3BT5/qP1/+uEEhGHJieGFzc2V0aWQ6Ly8xMDY4NDQ3NDU5OCEITGVmdEN1ZmYEIAG9AZcBClV4DcE9reo/fh26QSEYcmJ4YXNzZXRpZDovLzEwNjg0NDc0ODIzBNsBrwGwAQTGAa8BsAEE3AGoAZcBIQRQYXJ0IRBIdW1hbm9pZFJvb3RQ'
-..'YXJ0IQhBbmNob3JlZCENQm90dG9tU3VyZmFjZQTLAN0BlwEhC1Bpdm90T2Zmc2V0BN4BuQGXAQrYsfU+bF4fPxCJrT8hClRvcFN1cmZhY2UhDFRyYW5zcGFyZW5jeSETQW5pbWF0aW9uQ29udHJvbGxlciEIQW5pbWF0b3IHTgEENgHfAeABBvjZbQMAAAAAAAByQAq4'
-..'Ho1BFC73QoXrGcEKt0YYwQr1HkATW7JBCrgeFkMzM1JCmhklwwrT09E+E6DcPos7Lz4DAAAAYGZm5j8hGHJieGFzc2V0aWQ6Ly8xMDY4NDQ3MzIwNAoEhsRAAaPOQEMfJEAhDUV5ZWJhbGxfSW5uZXIHYAEEQQHhAeIBBsa/awMAAAAAAICYQAoTNxjBEd0eQNhVskEK'
-..'d0bGPol60D7HlSU+BKQBtwG4AQTjAbcBuAEhEEV5ZWxpZExlZnRCb3R0b20HUwEESQHhAeIBBm8lJQranxXBkN0VQJSZsUEKIDTqPrKPmT7/+Gs+IRhyYnhhc3NldGlkOi8vMTA2ODQ0NzM3MDMKpgvUQGUIi0CspVVAIQ1FeWVsaWRMZWZ0VG9wBE8B4QHiAQpVsBXB'
-..'Y18iQIdPsUEKHzTqPowVaj7/Y6E+IRhyYnhhc3NldGlkOi8vMTA2ODQ0NzM1MjUKpAvUQPbvU0ASH5JAIQRTa2luBFUB4QHiAQrAMBfBo0odQJT+sUEKwkL3PsFC9z7ymo89IRhyYnhhc3NldGlkOi8vMTA2ODQ0NzMzNzMKCN7fQAfe30DJBII/BOQBtwG4AQTlAbcB'
-..'uAEE5gG3AbgBBOcBtwG4AQToAbcBuAEEYAHpAeoBCrgejUHXo2FCj8IZQQoTSBjB0PQeQBqArEEKuB7vQTMzUkJSuG7BCg6n0T4Bcdw+KBYvPgRkAesB7AEKDzgYwUDeHkAnhaxBCiocxj4OTtA+c3IlPgSkAbQBtQEE7QG0AbUBIQ5FeWVsaWRSaWdodFRvcARqAesB'
-..'7AEKwrEVwfBfIkCbi61BBGwB6wHsAQpsMRfB40kdQA3drEEE7gG0AbUBIRFFeWVsaWRSaWdodEJvdHRvbQRwAesB7AEKOKEVwcTeFUCiQa1BBO8BtAG1AQTwAbQBtQEE8QG0AbUBBPIBtAG1ASEGRm9sZGVyIQpBbmltYXRpb25zIQlBbmltYXRpb24hBElkbGUhC0Fu'
-..'aW1hdGlvbklkIRhyYnhhc3NldGlkOi8vMTE4MzExODM0ODQhCElkbGVMb29rIRhyYnhhc3NldGlkOi8vMTE4MzExNzk3MTIhFEJhbGxTb2NrZXRDb25zdHJhaW50IQtBdHRhY2htZW50MCELQXR0YWNobWVudDEhDUxpbWl0c0VuYWJsZWQhC1Jlc3RpdHV0aW9uAwAA'
-..'AAAAAOA/IRJUd2lzdExpbWl0c0VuYWJsZWQhD1R3aXN0TG93ZXJBbmdsZQMAAAAAAABUwCEPVHdpc3RVcHBlckFuZ2xlAwAAAAAAAFRAIQpVcHBlckFuZ2xlIQ9Qcm94aW1pdHlQcm9tcHQhDkRpYWxvZ3VlUHJvbXB0IQpBY3Rpb25UZXh0IQhEaWFsb2d1ZSEVTWF4'
-..'QWN0aXZhdGlvbkRpc3RhbmNlAwAAAAAAACxAIQpPYmplY3RUZXh0IQVSYWRpbyETUmVxdWlyZXNMaW5lT2ZTaWdodCEFU3R5bGUhCFVJT2Zmc2V0CwAAAAAAAMhBCgDXC8H6jCRAgD3CQQoAAAAAAAAAAAEAgL8KAAAAAAAAgD8AAAAACh4XVLjHBzWtAgCAvwoDAIC/'
-..'AAAAtB4XVDgK+2hzvmoJprqbESS8CgAAgD8AAAAAAQIAOQoBAgA5AAAAtAEAgL8KZ2sNPgAAAABnaw20CgAAgD/HB7W4AAAAgArHB7U4AACAPwAAAAAK8VCwuEugO7cCAIC/CrLXhb4nGXc/TqA7NwobSjg+Md3cPVpNer8K2aGNvsabdT/r4mA9CgAAAAAAAAAAAAAA'
-..'AApETHq/xNVgPftwTz4K7OLcPbubdT9oa4U+CrZ9uL5GrYq+iHBvvgoAAIC/AAAAAAAAAAAKAAAAACcZdz+w14U+CltnFT9G9QI93EYXPwpnaw240zcMPw+zOb4KAACAP/f1Pjcjc7M4Cvf1PjcnGXc/sNeFvgoAAAAAjiDUviNAYj4KAACAPwAAAADHB7U4CgAAAIAA'
-..'AIA/AAAAAAqsA2i/9zLivdPc0D4KAIAPNxMadz/g0IU+CgAgF74AFJk9ALDhPgoU+fC+DB6vPnI2UD8K4OwiPnSJcD/sKZu+CgAcDT4AIJE9ADDePgowpHe/nsJWvu64Eb4KXvUivlKKcD9TIpu+CgAAgD8AAAAAAAAAAAoyQY5Eap3OQWVJnkQK4Hq9vQDQM7fo5n6/'
-..'CshP/71V/H0/AJw9PArKB7W4AAAAAAIAgL8KjUTiPhLnpj5M7929CuKPfr4AAAAAAAAAAAosMoA+Z2sNtCbCWjwKZo8Pvsrm3rn6/Ow7Cg0ACbxHEzW+7dshPAoAAAAA6bOpPfxI4j0KZk3ivhLnpj505t29CgAAgD8AAAAAxwc1OQrij34+AAAAAAAAAAAK7DdDHMD8'
-..'Rb4AAAAACgAAAADA/EW+AAAAAAoAAAAAeODGPsFlaT0KAAAAgCcZdz+w14W+CkDGsDmfzyO+DQAJuwoAAAAAb0ViPgAAAAAK1h5NvgIfA78e9iC9CgAAAAAkjn4+AAAAAAo6tKC5MDT8vaFF1jgKJ+OcOzwTNb4wFCw8CgAAAAD9s6k9/EjiPQrKBzW5xwc1rQIAgL8K'
-..'AwCAvwAAALTKBzU5Ci2Vcz5qCaa6UFgkvAoAAIA/AAAAAAAAAIAKAAAAgAAAALQBAIC/CmdrDb4AAAAAAAAAAAr24Ew+Ah8Dv5O4Ib0KAAAAADA0/L2hRda4CvJ7d7mfzyO+4RoKuwpWKYC+Z2sNtCbCWjwKZo8PPsrm3rlmiu07CgAAAAAAAAAAAgCAvwoAGhbAajSI'
-..'PwAAgLgK1XAWv8YBI75rFUu/CpgoID58inA/itubvgrdcBa/ywEjvnYVS78KmyggPnyKcD+N25u+CgAAgDcAAAAAAACeOwoAAMA4AADAuABArz0KAAAAAAAAALgAwMw9CgABMLkAUKE9/9/+vQoAAOA4AAAAuACgzD0KAADAsQAA7L3/P6a9Cl5qFj8S8SI+ChtLvwoe'
-..'RCA+Z4pwP/LUmz4KZmoWPxLxIj4RG0u/Ch1EID5ninA/9dSbPgoAAAA5AACQOAAAnjsKAABAuQAAwLcAyK89CgAAAAAAAAC3AMDMPQoA3v84AAzsvf8Hpr0KAAAAuQAAgLcAoMw9CgDMfzgBJKE9Afj+vVYBAAACAQIAAwAFAAYABwAIAAkAAQwAAgAKAAsADAANAA4A'
-..'DwAQABEAEgATABQAFQAWABcAGAAZABoAGwAcAB0AHgAfACAAIQACAwACACIAIwAkACUAJgAJAAEMAAIAKQALAAwADQAqAA8AEAARABIAEwAUABUAKwAXACwAGQAtABsALgAdAC8AHwAwAAkABAwAAgAxAAsAMgANADMADwAQABEANAATADUAFQA2ABcANwAZADgAGwA5'
-..'AB0AOgAfADsAPAAFAwACAD0AIwA+ACUAPwAJAAQMAAIAQAALAEEADQBCAA8AEAARAEMAEwA1ABUAKwAXAEQAGQAtABsARQAdAEYAHwBHADwABwMAAgA9ACMASAAlAEkAIQAEAwACACIAIwBKACUASwAhAAQDAAIATAAjAE0AJQBOACEABAMAAgBPACMATQAlAFAAUQAE'
-..'AgANAFIAFwBTAFQABAQADQBVAFYAVwBYAFkAWgBbAFwABAgAAgBdAF4AEABfAGAAYQBiAGMAYgAbAGQAZQBmAGcAaABpAA4IAAIAagBrAGwAbQBgAG4AbwAXAHAAGwBxAHIAcwB0AHUAaQAOCgACAHYAawBsAHcAdQB4AHkAegB7AGMAYgBuAGAAFwB8ABsAfQB+AGAA'
-..'fwAQAQCAAIEAggAQDgACAIMAhAAQAGsAhQBtAGAAbgBvABcAhgAbAIcAiACJAIoAiwCMAGIAjQCOAI8AkACRAJIAkwBiAJQAEAQAlQCWAJcAmACZAJgAmgCWAFwABAcAAgCbAF8AYABhAGIAYwBiABsAnABlAGYAZwBoAGkAFAkAAgBqAGsAbABtAGAAbgBvABcAcAAb'
-..'AHEAcgBzAHQAdQB+AGAAaQAUCwACAHYAawBsAHcAdQBtAGAAeAB5AHoAewBjAGIAbgBgABcAfAAbAH0AfgBgAH8AFgEAgACBAIIAFg4AAgCDAIQAEABrAIUAbQBgAG4AbwAXAIYAGwCHAIgAnQCKAIsAjABiAI0AjgCPAJAAngBgAJMAYgCUABYEAJUAlgCXAJgAmQCY'
-..'AJoAlgAJAAEMAAIAnwALAAwADQCgAA8AEAARABIAEwAUABUAoQAXAKIAGQChABsAowAdAKQAHwClACEAGgMAAgAiACMApgAlAKcACQABDAACAKgACwAMAA0AqQAPABAAEQASABMAFAAVAKEAFwCqABkAoQAbAKsAHQCsAB8ArQAJABwMAAIArgALAK8ADQCwAA8AEAAR'
-..'ALEAEwA1ABUAoQAXALIAGQChABsAswAdALQAHwC1ACEAHAMAAgAiACMAtgAlAKcAPAAcAgAjALcAJQC4AAkAAQwAAgC5AAsADAANALoADwAQABEAEgATABQAFQChABcAuwAZAKEAGwC8AB0AvQAfAL4AIQAgAwACACIAIwC/ACUAwAAJAAEMAAIAwQALAAwADQDCAA8A'
-..'EAARABIAEwAUABUAoQAXAMMAGQChABsAxAAdAMUAHwDGACEAIgMAAgAiACMAxwAlAMgACQABDAACAMkACwAMAA0AygAPABAAEQASABMAFAAVAKEAFwDLABkAoQAbAMwAHQDNAB8AzgAJACQMAAIAzwALANAADQDRAA8AEAARANIAEwDTABUAoQAXANQAGQChABsA1QAd'
-..'ANYAHwDXACEAJAMAAgAiACMA2AAlANkAPAAkAgAjALcAJQDaAFEAJAMADQDbABUA3AAXAN0ACQABDAACAN4ACwAMAA0A3wAPABAAEQASABMAFAAVAKEAFwDgABkAoQAbAOEAHQDiAB8A4wAhACkDAAIAIgAjAOQAJQDlAAkAAQwAAgDmAAsADAANAOcADwAQABEAEgAT'
-..'ABQAFQChABcA6AAZAKEAGwDpAB0A6gAfAOsACQArDAACAOwACwDQAA0A7QAPABAAEQDSABMA0wAVAKEAFwDuABkAoQAbAO8AHQDwAB8A8QAhACsDAAIAIgAjAPIAJQDzADwAKwIAIwC3ACUA9AAJAAEMAAIA9QALAAwADQD2AA8AEAARABIAEwAUABUAoQAXAPcAGQCh'
-..'ABsA+AAdAPkAHwD6ACEALwMAAgAiACMA+wAlAPwACQABDAACAP0ACwAMAA0A/gAPABAAEQASABMAFAAVAP8AFwAAARkAAQEbABwAHQACAR8AIAAhADEDAAIAIgAjAAMBJQAEAQkAAQwAAgAFAQsADAANAAYBDwAQABEAEgATABQAFQChABcABwEZAKEAGwAIAR0ACQEf'
-..'AAoBCQAzDAACAAsBCwDQAA0ADAEPABAAEQDSABMA0wAVAKEAFwANARkAoQAbAA4BHQAPAR8AEAEhADMDAAIAIgAjABEBJQDzADwAMwIAIwC3ACUAEgEJAAEMAAIAEwELAAwADQAUAQ8AEAARABIAEwAUABUAoQAXABUBGQChABsAFgEdABcBHwAYASEANwMAAgAiACMA'
-..'GQElAOUACQABDAACABoBCwAMAA0AGwEPABAAEQASABMAFAAVAKEAFwAcARkAoQAbAKsAHQAdAR8ArQAJADkMAAIAHgELAK8ADQAfAQ8AEAARALEAEwA1ABUAoQAXACABGQChABsAswAdACEBHwC1ACEAOQMAAgAiACMAIgElACMBPAA5AgAjALcAJQAkASUBAQ8AAgAm'
-..'AScBYgAoAXsACwAMAA0AKQEPABAAEQASABMAFAAVAKEAKgErARcAywAZAKEAGwAsAS0BewAuAWAALwEBAAAwAT4AAAkAAQ0AAgBPAAsAMQENADIBDwAQABEAMwETADQBFQA1ARcANgEZADcBGwA4AS4BOQEdADoBHwA7AQkAQAwAAgA8AQsAPQENAD4BDwAQABEAPwET'
-..'AEABFQA1ARcAQQEZADcBGwBCAR0AOgEfADsBPABBAgAjAEMBJQBEAQkAQAwAAgBFAQsARgENAEcBDwAQABEASAETABQAFQA1ARcASQEZADcBGwBKAR0ASwEfAEwBCQBADAACAE0BCwBGAQ0ATgEPABAAEQBIARMAFAAVADUBFwBPARkANwEbAFABHQBRAR8AUgEJAEAM'
-..'AAIAUwELAEYBDQBUAQ8AEAARAEgBEwAUABUANQEXAFUBGQA3ARsAVgEdAFcBHwBYATwARQIAIwBDASUAWQEhAEADAAIARQEjAFoBJQBbASEAQAMAAgBNASMAXAElAF0BCQABDQACAEwACwAxAQ0AXgEPABAAEQAzARMANAEVAF8BFwBgARkAYQEbAGIBLgE5AR0AOgEf'
-..'ADsBCQBJDAACADwBCwA9AQ0AYwEPABAAEQA/ARMAQAEVAF8BFwBkARkAYQEbAGUBHQA6AR8AOwE8AEoCACMAZgElAGcBCQBJDAACAGgBCwBGAQ0AaQEPABAAEQBIARMAFAAVAF8BFwBqARkAYQEbAFABHQBRAR8AUgEJAEkMAAIAUwELAEYBDQBrAQ8AEAARAEgBEwAU'
-..'ABUAXwEXAGwBGQBhARsAVgEdAFcBHwBYATwATQIAIwBmASUAbQEJAEkMAAIAbgELAEYBDQBvAQ8AEAARAEgBEwAUABUAXwEXAHABGQBhARsASgEdAEsBHwBMASEASQMAAgBoASMAcQElAHIBIQBJAwACAG4BIwBzASUAdAF1AQEBAAIAdgF3AVICAAIAeAF5AXoBdwFS'
-..'AgACAHsBeQF8AX0BAQYAgAFiAIEBggGDAWIAhAGFAYYBhwGIAYcBiQEBBwACAIoBiwGMAY0BjgGPAZABkQEQAJIBYACTAZQBQQEEAD0DJwA5AygAAgYnAAUGKAAECCcABwgoAAQJJwAkCSgABAonAAQKKABJCycABAsoAEAbJwAkGygAGh4nABoeKAAcHycAHB8oAB0h'
-..'JwApISgAICMnACQjKAAiJicAPSYoACQnJwAkJygAJSonACsqKAApLScAJC0oACsuJwArLigALDAnADcwKAAvMicAHDIoADE1JwAkNSgAMzYnADM2KAA0OCcAMzgoADc7JwAiOygAOTwnADk8KAA6QicAQUIoAEBGJwBFRigAQEcnAEBHKABDSCcAQEgoAERLJwBKSygA'
-..'SU4nAE1OKABJUCcASVAoAExRJwBJUSgAT1V+AQxVfwEo')
+local Objects = Decode('AEAPASEFTW9kZWwhBE5hbWUhDkFtYnVzaCBOZXh0Ym90IQpXb3JsZFBpdm90BO8A8ADxACEGQW1idXNoIQtQcmltYXJ5UGFydAQTAPIA8wAhBFBhcnQhEEh1bWFub2lkUm9vdFBhcnQhDUJvdHRvbVN1cmZhY2UDAAAAAAAAAAAhBkNGcmFtZSEKQ2FuQ29sbGlkZQIh'
+..'C09yaWVudGF0aW9uCgAAAAAAADRDAAAAACEIUG9zaXRpb24KuhO/QYqyQEHWxmfDIQhSb3RhdGlvbgoAADTDAAAAAAAANEMhBFNpemUKLSodQC0qHUAtKp0/IQpUb3BTdXJmYWNlIQxUcmFuc3BhcmVuY3kDAAAAAAAA8D8hB01vdG9yNkQhCFJvb3QgSGlwIQJDMAT0'
+..'APAA9QAhAkMxIQVQYXJ0MCEFUGFydDEhC01heFZlbG9jaXR5AwAAAKCZmbk/IQpBdHRhY2htZW50IQtBdHRhY2htZW50MQQoAPYA9wAKxf6rILFT5S6CPY+0Ci0qnbdiv2vAAAAAACELQXR0YWNobWVudDAELAD4APkACl7qALQyiUgwDC/ltAq4dMQ33oQJQS0qHbgh'
+..'BlNjcmlwdCEKUG9pbnRMaWdodCEKQnJpZ2h0bmVzcyEFQ29sb3IGAP+3IQVSYW5nZQMAAAAAAIBDQAMAAAAgXI/6PwMAAAAAAAA4QAMAAAAg80pnQQb/AAQDAAAAAAAAGEAhBVNvdW5kIQZTb3VuZDIhBkxvb3BlZCIhDVBsYXliYWNrU3BlZWQDAAAAoJmZ4T8hElJv'
+..'bGxPZmZNYXhEaXN0YW5jZQMAAAAAACB8QCESUm9sbE9mZk1pbkRpc3RhbmNlAwAAAAAAABRAIQtSb2xsT2ZmTW9kZQMAAAAAAAAAQCEHU291bmRJZCEXcmJ4YXNzZXRpZDovLzg4ODA3NjU0OTchBlZvbHVtZQMAAABAMzPDPyERRmxhbmdlU291bmRFZmZlY3QhBURl'
+..'cHRoIQNNaXghBFJhdGUDAAAAoJmZyT8hElRyZW1vbG9Tb3VuZEVmZmVjdCEERHV0eQMAAADgehTuPyEJRnJlcXVlbmN5AwAAAAAAADRAIRVEaXN0b3J0aW9uU291bmRFZmZlY3QhBUxldmVsAwAAAMDMzOw/IRRFcXVhbGl6ZXJTb3VuZEVmZmVjdCEISGlnaEdhaW4D'
+..'AAAAYGZmEkAhB0xvd0dhaW4DAAAAAACANcAhB01pZEdhaW4DAAAAoJmZ6b8hCUZvb3RzdGVwcyEHUGxheWluZwMAAAAAAMBiQAMAAABAXrrJPwMAAACAFK7vPyEPRWNob1NvdW5kRWZmZWN0IQhQcmlvcml0eSEFRGVsYXkDAAAAQIts7z8hCEZlZWRiYWNrIQhXZXRM'
+..'ZXZlbAMAAADAzMwEwCEJSnVtcHNjYXJlIQlTY3JlZW5HdWkhDEp1bXBzY2FyZUd1aSEHRW5hYmxlZCEOWkluZGV4QmVoYXZpb3IhBUZyYW1lIQtBbmNob3JQb2ludAsAAAA/AAAAPyEQQmFja2dyb3VuZENvbG9yMwYACAYhD0JvcmRlclNpemVQaXhlbAy+2v8+AABX'
+..'yf8+AAAMAAAAABAnAAAAABAnIQpJbWFnZUxhYmVsBv///yEWQmFja2dyb3VuZFRyYW5zcGFyZW5jeQwAAAA/AAAAAAA/AAAMAAAAAPQBAAAAAPQBIQVJbWFnZSEYcmJ4YXNzZXRpZDovLzEwMTEwNTc2NjYzIQhEaXNhYmxlZCEKSnVtcHNjYXJlMgMAAAAAAABZQCEX'
+..'cmJ4YXNzZXRpZDovLzkwNDUxOTkwNzMDAAAAQDMz0z8DAAAAAAAADMAhFVBpdGNoU2hpZnRTb3VuZEVmZmVjdCEGT2N0YXZlAwAAAAAAAOA/IQpKdW1wc2NhcmUxAwAAAEAzM+M/AwAAAAAAANA/IQZTb3VuZDMhF3JieGFzc2V0aWQ6Ly85MTEzMjE4NjcyAwAAAKCZ'
+..'mdk/AwAAAAAAAAhAAwAAAADXo+g/IQlQbGF5U291bmQDAAAAAADAckAhDFRpbWVQb3NpdGlvbgO6SQwCK4f+PwMAAADA9SjMPyEES2lsbAMAAAAAAAAQQAMAAAAAAECPQCEXcmJ4YXNzZXRpZDovLzUyNjM1NjA4OTYDAAAA4FG4vj8DAAAAAClc7z8hBUtub2NrAwAA'
+..'AKCZmek/AwAAAAAAQG9AIRdyYnhhc3NldGlkOi8vNTU3OTUzMzIzMAMAAADA9SjsPwMAAAAAAABUwCEFVG9yc28hCExlZnQgSGlwBPoA+wD8AAT9APsA/AAhCVJpZ2h0IEhpcAT+AP8A/AAEAAEBAfwAIQ1MZWZ0IFNob3VsZGVyBAIB+wD8AAQDAfsA/AAhDlJpZ2h0'
+..'IFNob3VsZGVyBAQB/wD8AAQFAQEB/AAhBE5lY2sEBgHwAPUABAcBCAEJASEITGVmdCBMZWcEsQDyAAoBChL9w0ECaBlB1sZnwwotKp0/LSodQC0qnT8hCVJpZ2h0IExlZwS1APIACgEKbyq6QfxnGUHXxmfDIQhMZWZ0IEFybQS4APIACgEKrs/NQZSyQEHWxmfDIQlS'
+..'aWdodCBBcm0EuwDyAAoBCsZXsEGAskBB1sZnwyEESGVhZAS+AAsBDAEKtxO/QVNaVEHWxmfDCrnxoDrM76A6zO+gOiEPUGFydGljbGVFbWl0dGVyKAQAAAAA////aAO4Pnf/zbiRuj7///8AAIA/////IQREcmFnIQhMaWZldGltZREAAAAAAACAPyENTGlnaHRFbWlz'
+..'c2lvbiEMTG9ja2VkVG9QYXJ0AwAAAAAAAC5AIQhSb3RTcGVlZBEAAKDAAACgQBEAAIC/AACAPykKAAAAAAAAoEAAcgI+MVsCPkD2nUBPr/Q9ICSDPqoOo0AtBeQ9mL/CPkD2nUBqidU98KT9PsAJokBnfsU9A7MaPwAAoECy4Lk99gozP6oOo0Cafa49ccdLPwAAoEDn'
+..'06Q9/RVmP5QTpEAqxJM9AACAPwAAoEBDcoI9IQVTcGVlZBHNzEw+zcxMPiELU3ByZWFkQW5nbGULAAC0QwAAtEMhB1RleHR1cmUpCwAAAAAAAAAAAAAAABEdUj4AAAAAAAAAAI47hT4AAIA/AAAAAME2oj4AAAAAAAAAABGpyT4AAIA/AAAAAME24j4AAAAAAAAAAJTc'
+..'CT8AAIA/AAAAAB2UHD8AAAAAAAAAAH3pMT8AAIA/AAAAAKvPQT8AAAAAAAAAAAAAgD8AAAAAAAAAACEHWk9mZnNldCEISHVtYW5vaWQhE0Rpc3BsYXlEaXN0YW5jZVR5cGUhBkhlYWx0aAMAAAAA8Gn4QCERSGVhbHRoRGlzcGxheVR5cGUhCUp1bXBQb3dlcgMAAAAA'
+..'AABeQCEJTWF4SGVhbHRoIQ1OYW1lT2NjbHVzaW9uIQlXYWxrU3BlZWQhA05QQwQNAQ4BDwEhCEJhY2twYWNrIQJBSSELUGF0aGZpbmRpbmchDUJpbmRhYmxlRXZlbnQhCU1vdXNlRG93biELT2JqZWN0VmFsdWUhBlRhcmdldCEMV2VhcG9uRmlyaW5nIQ1Nb25zdGVy'
+..'U2NyaXB0IQlBbmltYXRpb24hBkF0dGFjayELQW5pbWF0aW9uSWQhKGh0dHA6Ly93d3cucm9ibG94LmNvbS9hc3NldD9pZD0xOTAxNDk0MzEhDFZlY3RvcjNWYWx1ZSEGUGF0aFRvIQdSZXNwYXduCpDRCEEHpjZBN3tmwwoAAIC/AAAAAAAAAAAKAAAAAAAAgD/A4cmr'
+..'CgAAgL+hoK22qtUttQqmoK22AACAP/DdSDYKAAAAAAAAAAAAAAAACgAAAAAAAAAAAACAPwoAAIA/PACgsZAUAKwKPACgMQAAgD8IFYCdCgAAgD8YAACyIQBgrQoYAAAyAACAP///D7EKLiqdvy4qnb8AAAAACi69O7MAAAAAAACAPwoAAAAA//9/PwAAAAAKLiodvy4q'
+..'nT8AAAAACi4qnT8uKp2/AAAAAAouvTuzAAAAgAAAgL8KLiodPy4qnT8AAAAACi69O7MAAAAAAACAvwouKp2/LiodPwAAAAAKLiodPy4qHT8AAAAACi4qnT8uKh0/AAAAAAouKh2/LiodPwAAAAAKAAAAAC4qnT8AAAAACuGiSKwr2SC6aIs/rQoAAIC/kmejrAAAUCsK'
+..'AABQqwAAnC0AAIA/CqWgrbb+/38/7t1INgoAAIC/l6Cttp3VLbUKsKCttgAAgD+i3Ug2CrjKj0IaW/vAMXdeQwpy/X+/H6gQPAiq27cKSKgQPCv9fz/94z+7VwEAAAIAAgADAAQABQABAAECAAIABgAEAAgACQACCgACAAoACwAMAA0ACAAOAA8AEAARABIAEwAUABUA'
+..'FgAXABgADAAZABoAGwADBAACABwAHQAeAB8AHgAiACMAJAADBAACACUADQAmABAAJwASACgAJAADBAACACkADQAqABAAKwASACwALQADAAAtAAMAAC4AAwMALwAjADAAMQAyADMALgADAwAvADQAMAAxADIANQAuAAMDAC8ANgAwADcAMgA4ADkAAwgAAgA6ADsAPAA9'
+..'AD4APwBAAEEAQgBDAEQARQBGAEcASABJAAwDAEoAGgBLABoATABNAE4ADAIATwBQAFEAUgBTAAwBAFQAVQBWAAwDAFcAWABZAFoAWwBcADkAAwkAAgBdADsAPAA9AD4AXgA8AD8AXwBBAEIAQwAaAEUARgBHAGAAUwARAQBUAGEASQARAwBKABoASwAaAEwATQBWABED'
+..'AFcAWABZAFoAWwBcAE4AEQIATwBQAFEAUgBiABEEAGMAGgBkAGUAZgAaAGcAaAAtAAMBAAIAaQBqABcDAAIAawBsAA8AbQAaAG4AGAUAbwBwAHEAcgBzAAwAEgB0ABYAdQB2ABkGAG8AcABxAHcAeAAaABIAeQAWAHoAewB8AC0AGgEAfQA8ADkAGwcAAgB+AD0AOAA/'
+..'AH8AQQBCAEMAGgBFAIAARwCBAFMAHAIAYwBEAFQAGgBJABwEAGMARABKABoASwAaAEwATQBWABwEAGMARABXAIIAWQBCAFsADABOABwDAGMARABPAFAAUQBSAGIAHAQAYwBEAGQAZQBmABoAZwBoAIMAHAEAhACFAIMAHAEAhACFADkAGwcAAgCGAD0AhwA/AH8AQQBC'
+..'AEMAGgBFAEYARwCIAFMAJAEAVABhAEkAJAMASgAaAEsAGgBMAE0AVgAkAwBXAFgAWQBaAFsAXABOACQCAE8AUABRAFIAYgAkBABjABoAZABlAGYAGgBnAGgAOQADBwACAIkAOwA8AD8AQABBAEIAQwBEAEUAigBHAIsAUwAqAgBjAIwAVACNAC0AAwAAOQADCgACAI4A'
+..'OwA8AD0AhQBeADwAPwCPAEEAQgBDAEQARQBGAJAAkQBHAGAAUwAtAQBUAGEASQAtAwBKABoASwAaAEwATQBWAC0DAFcAWABZAFoAWwBcAE4ALQIATwBQAFEAUgA5AAMHADsAPAA9AIUAPwBAAEEAQgBDAEQARQBGAEcAkgBJADIDAEoAGgBLABoATABNAE4AMgIATwBQ'
+..'AFEAUgBTADIBAFQAVQBWADIDAFcAWABZAFoAWwBcADkAAwYAAgCTAD0AlAA/AJUAQQCUAEUAlgBHAJcAUwA3AgBjAEIAVACYAIMANwEAhACFAEkANwQAYwBEAEoAGgBLABoATABNAE4ANwMAYwBEAE8AUABRAFIAOQADBgACAJkAPQCaAD8AmwBBADgARQCcAEcAiwBT'
+..'ADwBAFQAnQBJADwDAEoAGgBLABoATABNAFYAPAMAVwCeAFkADABbAAwATgA8AgBPAFAAUQBSAAkAAgoAAgCfAAsADAANAAgADgAPABAAEQASABMAFAAVABYAFwAYAAwAGQAaABsAQQQAAgCgAB0AoQAfAKIAIgAjABsAQQQAAgCjAB0ApAAfAKUAIgAjABsAQQQAAgCm'
+..'AB0ApwAfAKgAIgAjABsAQQQAAgCpAB0AqgAfAKsAIgAjABsAQQQAAgCsAB0ArQAfAK4AIgAjAAkAAgoAAgCvAAsADAANALAADgAPABAAEQASALEAFAAVABYAsgAYAAwAGQAaAAkAAgoAAgCzAAsADAANALQADgAPABAAEQASALUAFAAVABYAsgAYAAwAGQAaAAkAAgoA'
+..'AgC2AAsADAANALcADgAPABAAEQASALgAFAAVABYAsgAYAAwAGQAaAAkAAgoAAgC5AAsADAANALoADgAPABAAEQASALsAFAAVABYAsgAYAAwAGQAaAAkAAgoAAgC8AAsADAANAL0ADgAPABAAEQASAL4AFAAVABYAvwAYAAwAGQAaAMAASw4AMADBAMIAIwDDAMQAxQBN'
+..'AMYAPABMAMcAyADJABQAygAWAMsAzADNAM4AzwDQAHwAGQDRANIAlADTAAIHANQARADVANYA1wBEANgA2QDaANYA2wAaANwAXwABAAICAAIA3QAEAN4A3wACAQACAOAALQBPAQACAOEA4gBPAQACAOMA5ABPAQACAOUALQBPAQACAOYALQBPAQACAOcA6ABUAgACAOkA'
+..'6gDrAOwAAgEAAgDtAC0AAgEAAgDuAA0CBwADBCAAAwQhAEFCIABBQiEAR0MgAEFDIQBIRCAAQUQhAElFIABBRSEASkYgAEFGIQBL')
 for _,obj in pairs(Objects) do
 	obj.Parent = script or workspace
 end
+
+RunScripts()
