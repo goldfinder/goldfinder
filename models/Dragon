@@ -1,8 +1,10 @@
 -- Converted using Mokiros's Model to Script Version 3
 -- Converted string size: 6480 characters
+local UCID = 0
 local function DecodeUnion(Values,Flags,Parse,data)
 	local m = Instance.new("Folder")
-	m.Name = "UnionCache ["..tostring(math.random(1,9999)).."]"
+	m.Name = "UnionCache ["..tostring(UCID).."]"
+	UCID +=1
 	m.Archivable = false
 	m.Parent = game:GetService("ServerStorage")
 	local Union,Subtract = {},{}
