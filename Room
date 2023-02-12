@@ -1,210 +1,694 @@
 -- Converted using Mokiros's Model to Script Version 3
--- Converted string size: 15504 characters
+-- Converted string size: 4620 characters
 
 local ScriptFunctions = {
 function(script,require)
-local plr = false
-local uidofused = 0
-local Hiding = false
-local HidingPos = script.Parent.Parent.HidePosition
-local ExitPos = script.Parent.Parent.ExitPosition
-local sc = script.LockerClose
-local so = script.LockerOpen
-function Hide(Clicker)
-	if plr == true and uidofused ~= Clicker.UserId then return end
-	if Hiding == false and Clicker.Character.Humanoid.Health >= 1 then
-		plr = true
-		uidofused = Clicker.UserId
-		Hiding = true
-		so:Play()
-		workspace.CurrentCamera.CameraSubject = Clicker.Character.Head
-		Clicker.Character.HumanoidRootPart.Anchored = true
-		Clicker.Character.HumanoidRootPart.CFrame = CFrame.new(HidingPos.Position, ExitPos.Position)
-		local Anim = Instance.new("Animation")
-		Anim.AnimationId = "rbxassetid://6534522042"
-		Anim.Name = "Enter"
-		Anim.Parent = Clicker.Character
-		local Hum = Clicker.Character.Humanoid:LoadAnimation(Clicker.Character.Enter)
-		Hum:Play()
-		wait(0.8)
-		local Anim2 = Instance.new("Animation")
-		Anim2.AnimationId = "rbxassetid://6534399775"
-		Anim2.Name = "Hiding"
-		Anim2.Parent = Clicker.Character
-		local Hum = Clicker.Character.Humanoid:LoadAnimation(Clicker.Character.Hiding)
-		Hum:Play()
-	elseif Hiding == true then
-		plr = false
-		sc:Play()
-		local Hum = Clicker.Character.Humanoid:LoadAnimation(Clicker.Character.Hiding)
-		Hum:Stop()
-		local Anim3 = Instance.new("Animation")
-		Anim3.AnimationId = "rbxassetid://6555451457"
-		Anim3.Name = "Leave"
-		Anim3.Parent = Clicker.Character
-		local Hum = Clicker.Character.Humanoid:LoadAnimation(Clicker.Character.Leave)
-		Hum:Play()
-		workspace.CurrentCamera.CameraSubject = Clicker.Character.Humanoid
-		Clicker.Character.HumanoidRootPart.Anchored = false
-		Clicker.Character.HumanoidRootPart.CFrame = CFrame.new(ExitPos.Position, HidingPos.Position)
-		Hiding = false
+-- See if I have a tool
+local spawner = script.Parent
+local tool = nil
+local region = Region3.new(Vector3.new(spawner.Position.X - spawner.Size.X/2, spawner.Position.Y + spawner.Size.Y/2, spawner.Position.Z - spawner.Size.Z/2),
+   Vector3.new(spawner.Position.X + spawner.Size.X/2, spawner.Position.Y + 4, spawner.Position.Z + spawner.Size.Z/2))
+local parts = game.Workspace:FindPartsInRegion3(region)
+for _, part in pairs(parts) do
+	if part and part.Parent and part.Parent:IsA("Tool") then
+		tool = part.Parent
+		break
 	end
 end
 
-script.Parent.ProximityPrompt.Triggered:Connect(Hide)
-end,
-function(script,require)
-local anim = script.Animation
-local animController = script.Parent.AnimationController
-local LoadAnim = animController:LoadAnimation(anim)
-script.Parent.Part.ProximityPrompt.Triggered:Connect(function()
-	LoadAnim:Play()
-end)
-end,
-function(script,require)
-local handle = script.Parent.End
-local doorOpen = false
-local changingState = false
-local soundo = script.Parent.End.Close
-local soundc = script.Parent.End.Open
-handle.ProximityPrompt.Triggered:Connect(function(player, part)
---handle.ClickDetector.MouseClick:Connect(function(player, part)
-	if doorOpen == true and changingState == false then
-		changingState = true
-		soundo:Play()
-		for i = 1, 16 do
-			script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame * CFrame.new(0, 0, 0.1))
-			wait(0.0001)
+local configTable = spawner.Configurations
+local configs = {}
+local function loadConfig(configName, defaultValue)
+	if configTable:FindFirstChild(configName) then
+		configs[configName] = configTable:FindFirstChild(configName).Value
+	else
+		configs[configName] = defaultValue
+	end
+end
+
+loadConfig("SpawnCooldown", 3)
+
+if tool then
+	tool.Parent = game.ServerStorage
+	
+	while true do
+		-- put tool on pad
+		local toolCopy = tool:Clone()
+		local handle = toolCopy:FindFirstChild("Handle")
+		toolCopy.Parent = game.Workspace
+		local toolOnPad = true
+		local parentConnection
+		parentConnection = toolCopy.AncestryChanged:connect(function()
+			if handle then handle.Anchored = false end
+			toolOnPad = false
+			parentConnection:disconnect()
+		end)
+		if handle then
+			handle.CFrame = (spawner.CFrame + Vector3.new(0,handle.Size.Z/2 + 1,0)) * CFrame.Angles(-math.pi/2,0,0)
+			handle.Anchored = true
+		end
+		-- wait for tool to be removed
+		while toolOnPad do 
+			if handle then
+				handle.CFrame = handle.CFrame * CFrame.Angles(0,0,math.pi/60)
+			end
+			wait() 
 		end
 		
-		changingState = false
-		doorOpen = false
-	elseif changingState == false then
-		changingState = true
-		soundc:Play()
-		for i = 1, 16 do
-			script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame * CFrame.new(0, 0, -0.1))
-			wait(0.0001)
-
-		end
-	
-		changingState = false
-		doorOpen = true
+		-- wait for cooldown
+		wait(configs["SpawnCooldown"])		
 	end
-end)
+	
+end
+
+
+
+--if tool then
+--	local handle = tool:FindFirstChild("Handle")
+--	local toolCopy = tool:Clone()
+--	toolCopy.Parent = game.ServerStorage
+--	local toolOnPad = true	
+--	
+--	local parentConnection
+--	parentConnection = tool.AncestryChanged:connect(function()
+--		if handle then handle.Anchored = false end
+--		toolOnPad = false
+--		parentConnection:disconnect()
+--	end)
+--	
+--	if handle then
+--		handle.CFrame = (spawner.CFrame + Vector3.new(0,handle.Size.Z/2 + 1,0)) * CFrame.Angles(-math.pi/2,0,0)
+--		handle.Anchored = true
+--	end
+--	
+--	while true do
+--		while toolOnPad do
+--			if handle then
+--				handle.CFrame = handle.CFrame * CFrame.Angles(0,0,math.pi/60)
+--			end
+--			wait()
+--		end
+--		wait(configs["SpawnCooldown"])
+--		local newTool = toolCopy:Clone()
+--		newTool.Parent = game.Workspace
+--		handle = newTool:FindFirstChild("Handle")
+--		toolOnPad = true
+--	end
+--end
 end,
 function(script,require)
-local handle = script.Parent.End
-local doorOpen = false
-local changingState = false
-local soundo = script.Parent.End.Close
-local soundc = script.Parent.End.Open
-handle.ProximityPrompt.Triggered:Connect(function(player, part)
---handle.ClickDetector.MouseClick:Connect(function(player, part)
-	if doorOpen == true and changingState == false then
-		changingState = true
-		soundo:Play()
-		for i = 1, 16 do
-			script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame * CFrame.new(0, 0, 0.1))
-			wait(0.0001)
+--------------------- TEMPLATE ASSAULT RIFLE WEAPON ---------------------------
+-- Waits for the child of the specified parent
+local function WaitForChild(parent, childName)
+	while not parent:FindFirstChild(childName) do parent.ChildAdded:wait() end
+	return parent[childName]
+end
+
+----- MAGIC NUMBERS ABOUT THE TOOL -----
+-- How much damage a bullet does
+local Damage = 28
+-- How many times per second the gun can fire
+local FireRate = 1 / 6
+-- The maximum distance the can can shoot, this value should never go above 1000
+local Range = 700
+-- In radians the minimum accuracy penalty
+local MinSpread = 0.025
+-- In radian the maximum accuracy penalty
+local MaxSpread = 0.085
+-- Number of bullets in a clip
+local ClipSize = 30
+-- DefaultValue for spare ammo
+local SpareAmmo = 90
+-- The amount the aim will increase or decrease by
+-- decreases this number reduces the speed that recoil takes effect
+local AimInaccuracyStepAmount = 1.15
+-- Time it takes to reload weapon
+local ReloadTime = 2.3
+----------------------------------------
+
+-- Colors
+local FriendlyReticleColor = Color3.new(0, 1, 0)
+local EnemyReticleColor	= Color3.new(1, 0, 0)
+local NeutralReticleColor	= Color3.new(1, 1, 1)
+
+local Spread = MinSpread
+local AmmoInClip = ClipSize
+
+local Tool = script.Parent
+local Handle = WaitForChild(Tool, 'Handle')
+local WeaponGui = nil
+local Receiver = WaitForChild(Tool, 'Receiver')
+
+local LeftButtonDown
+local Reloading = false
+local IsShooting = false
+
+-- Player specific convenience variables
+local MyPlayer = nil
+local MyCharacter = nil
+local MyHumanoid = nil
+local MyTorso = nil
+local MyMouse = nil
+local  rot = {"100","200","300","400","500","-100","-200","-300","-400","-500"}
+pi = {"1","1","1","1.05","0.95"}
+local RecoilAnim
+local RecoilTrack = nil
+
+local IconURL = Tool.TextureId  -- URL to the weapon icon asset
+
+local DebrisService = game:GetService('Debris')
+local PlayersService = game:GetService('Players')
+
+
+local FireSound
+
+local OnFireConnection = nil
+local OnReloadConnection = nil
+
+local DecreasedAimLastShot = false
+local LastSpreadUpdate = time()
+
+-- this is a dummy object that holds the flash made when the gun is fired
+local FlashHolder = nil
+
+
+local WorldToCellFunction = Workspace.Terrain.WorldToCellPreferSolid
+local GetCellFunction = Workspace.Terrain.GetCell
+
+function RayIgnoreCheck(hit, pos)
+	if hit then
+		if hit.Transparency >= 1 or string.lower(hit.Name) == "water" or
+				hit.Name == "Effect" or hit.Name == "Rocket" or hit.Name == "Bullet" or
+				hit.Name == "Handle" or hit:IsDescendantOf(MyCharacter) then
+			return true
+		elseif hit:IsA('Terrain') and pos then
+			local cellPos = WorldToCellFunction(Workspace.Terrain, pos)
+			if cellPos then
+				local cellMat = GetCellFunction(Workspace.Terrain, cellPos.x, cellPos.y, cellPos.z)
+				if cellMat and cellMat == Enum.CellMaterial.Water then
+					return true
+				end
+			end
 		end
+	end
+	return false
+end
+
+-- @preconditions: vec should be a unit vector, and 0 < rayLength <= 1000
+function RayCast(startPos, vec, rayLength)
+	local hitObject, hitPos = game.Workspace:FindPartOnRay(Ray.new(startPos + (vec * .01), vec * rayLength), Handle)
+	if hitObject and hitPos then
+		local distance = rayLength - (hitPos - startPos).magnitude
+		if RayIgnoreCheck(hitObject, hitPos) and distance > 0 then
+			-- there is a chance here for potential infinite recursion
+			return RayCast(hitPos, vec, distance)
+		end
+	end
+	return hitObject, hitPos
+end
+
+
+
+function TagHumanoid(humanoid, player)
+	-- Add more tags here to customize what tags are available.
+	while humanoid:FindFirstChild('creator') do
+		humanoid:FindFirstChild('creator'):Destroy()
+	end 
+	local creatorTag = Instance.new("ObjectValue")
+	creatorTag.Value = player
+	creatorTag.Name = "creator"
+	creatorTag.Parent = humanoid
+	DebrisService:AddItem(creatorTag, 1.5)
+
+	local weaponIconTag = Instance.new("StringValue")
+	weaponIconTag.Value = IconURL
+	weaponIconTag.Name = "icon"
+	weaponIconTag.Parent = creatorTag
+end
+
+
+local function CreateBullet(bulletPos)
+	local bullet = Instance.new('Part', workspace)
+	bullet.FormFactor = Enum.FormFactor.Custom
+	bullet.Size = Vector3.new(0.175, 0.175, 0.175)
+	bullet.Material = ("Metal")
+	bullet.BrickColor = BrickColor.new("Really black")
+	bullet.Shape = Enum.PartType.Block
+	bullet.CanCollide = false
+	bullet.CFrame = CFrame.new(bulletPos)
+	bullet.Anchored = true
+	bullet.TopSurface = Enum.SurfaceType.Smooth
+	bullet.BottomSurface = Enum.SurfaceType.Smooth
+	bullet.Name = 'Bullet'
+	DebrisService:AddItem(bullet, 600)
+	return bullet
+end
+
+local function Reload()
+	if not Reloading then
+		Reloading = true
+		-- Don't reload if you are already full or have no extra ammo
+		if AmmoInClip ~= ClipSize and SpareAmmo > 0 then
+			if RecoilTrack then
+				RecoilTrack:Stop()
+			end
+			if WeaponGui and WeaponGui:FindFirstChild('Crosshair') then
+				if WeaponGui.Crosshair:FindFirstChild('ReloadingLabel') then
+					WeaponGui.Crosshair.ReloadingLabel.Visible = true
+				end
+			end
+			Receiver:FireServer("PlaySound", "Reload")
+			wait(ReloadTime)
+			-- Only use as much ammo as you have
+			local ammoToUse = math.min(ClipSize - AmmoInClip, SpareAmmo)
+			AmmoInClip = AmmoInClip + ammoToUse
+			SpareAmmo = SpareAmmo - ammoToUse
+			UpdateAmmo(AmmoInClip)
+			WeaponGui.Reload.Visible = false
+		end
+		Reloading = false
+	end
+end
+
+function OnFire()
+	if IsShooting then return end
+		if MyHumanoid and MyHumanoid.Health > 0 then
+		if RecoilTrack and AmmoInClip > 0 then
+			RecoilTrack:Play()
+		end
+		end
+		IsShooting = true
+		while LeftButtonDown and AmmoInClip > 0 and not Reloading do
+			if Spread and not DecreasedAimLastShot then
+				Spread = math.min(MaxSpread, Spread + AimInaccuracyStepAmount)
+				UpdateCrosshair(Spread)
+			end
+			DecreasedAimLastShot = not DecreasedAimLastShot
+			script.Parent.Flash.Image.Enabled = true
+script.Parent.Flash.ImageTwo.Enabled = true
+script.Parent.Flash.Image.Flash.Rotation = rot[math.random(1,#rot)]
+script.Parent.Flash.ImageTwo.Flash.Rotation = rot[math.random(1,#rot)]
+script.Parent.Flash.Embers.Enabled = true
+			if Handle:FindFirstChild('FireSound') then
+				Receiver:FireServer("PlaySound", "FireSound")
+				Receiver:FireServer("Flash", true)
+			end
+			if MyMouse then
+				local targetPoint = MyMouse.Hit.p
+				local shootDirection = (targetPoint - Handle.Position).unit
+				-- Adjust the shoot direction randomly off by a little bit to account for recoil
+				shootDirection = CFrame.Angles((0.5 - math.random()) * 2 * Spread,
+																(0.5 - math.random()) * 2 * Spread,
+																(0.5 - math.random()) * 2 * Spread) * shootDirection
+				local hitObject, bulletPos = RayCast(Handle.Position, shootDirection, Range)
+				local bullet
+				-- Create a bullet here
+				if hitObject then
+					bullet = CreateBullet(bulletPos)
+				end
+				if hitObject and hitObject.Parent then
+					local hitHumanoid = hitObject.Parent:FindFirstChild("Humanoid")
+					if hitHumanoid then
+						local hitPlayer = game.Players:GetPlayerFromCharacter(hitHumanoid.Parent)
+						if MyPlayer.Neutral or (hitPlayer and hitPlayer.TeamColor ~= MyPlayer.TeamColor) then
+							TagHumanoid(hitHumanoid, MyPlayer)
+							Receiver:FireServer("Damage", hitHumanoid, Damage)
+							if bullet then
+								bullet:Destroy()
+								bullet = nil
+								--bullet.Transparency = 1
+							end
+							Spawn(UpdateTargetHit)
+						end
+					end
+				end
+				
+								if hitObject and hitObject.Parent then
+					local hitD = hitObject.Parent:FindFirstChild("Egglon")
+					if hitD then
+						local hitPlayer = game.Players:GetPlayerFromCharacter(hitD.Parent)
+						if true then
+							TagHumanoid(hitD, MyPlayer)
+							Receiver:FireServer("Damage", hitD, Damage)
+							if bullet then
+								bullet:Destroy()
+								bullet = nil
+								--bullet.Transparency = 1
+							end
+							Spawn(UpdateTargetHit)
+						end
+					end
+								end
 		
-		changingState = false
-		doorOpen = false
-	elseif changingState == false then
-		changingState = true
-		soundc:Play()
-		for i = 1, 16 do
-			script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame * CFrame.new(0, 0, -0.1))
-			wait(0.0001)
-
+												
+				AmmoInClip = AmmoInClip - 1
+				UpdateAmmo(AmmoInClip)
+			end
+			wait(FireRate)
 		end
-	
-		changingState = false
-		doorOpen = true
+		Receiver:FireServer("Flash", false)
+		IsShooting = false
+		wait(.05)
+script.Parent.Flash.Image.Enabled = false
+script.Parent.Flash.ImageTwo.Enabled = false
+script.Parent.Flash.Embers.Enabled = false
+		if AmmoInClip == 0 then
+			Reload()
+		end
+		if RecoilTrack then
+			RecoilTrack:Stop()
+		end
+	end
+
+local TargetHits = 0
+function UpdateTargetHit()
+	TargetHits = TargetHits + 1
+	if WeaponGui and WeaponGui:FindFirstChild('Crosshair') and WeaponGui.Crosshair:FindFirstChild('TargetHitImage') then
+		WeaponGui.Crosshair.TargetHitImage.Visible = true
+	end
+	wait(0.25)
+	TargetHits = TargetHits - 1
+	if TargetHits == 0 and WeaponGui and WeaponGui:FindFirstChild('Crosshair') and WeaponGui.Crosshair:FindFirstChild('TargetHitImage') then
+		WeaponGui.Crosshair.TargetHitImage.Visible = false
+	end
+end
+
+function UpdateCrosshair(value, mouse)
+	if WeaponGui then
+		local absoluteY = 650
+		WeaponGui.Crosshair:TweenSize(
+			UDim2.new(0, value * absoluteY * 2 + 23, 0, value * absoluteY * 2 + 23),
+			Enum.EasingDirection.Out,
+			Enum.EasingStyle.Linear,
+			0.33)
+	end
+end
+
+function UpdateAmmo(value)
+	if WeaponGui and WeaponGui:FindFirstChild('AmmoHud') and WeaponGui.AmmoHud:FindFirstChild('ClipAmmo') then
+		WeaponGui.AmmoHud.ClipAmmo.Text = AmmoInClip
+		if value > 0 and WeaponGui:FindFirstChild('Crosshair') and WeaponGui.Crosshair:FindFirstChild('ReloadingLabel') then
+			WeaponGui.Crosshair.ReloadingLabel.Visible = false
+		end
+	end
+	if WeaponGui and WeaponGui:FindFirstChild('AmmoHud') and WeaponGui.AmmoHud:FindFirstChild('TotalAmmo') then
+		WeaponGui.AmmoHud.TotalAmmo.Text = SpareAmmo
+	end
+end
+
+
+function OnMouseDown()
+	LeftButtonDown = true
+	OnFire()
+end
+
+function OnMouseUp()
+	LeftButtonDown = false
+end
+
+function OnKeyDown(key)
+	if string.lower(key) == 'r' then
+		Reload()
+	end
+end
+
+
+function OnEquipped(mouse)
+	Receiver:FireServer("PlaySound", "EquipSound")
+	RecoilAnim = WaitForChild(Tool, 'Recoil')
+	FireSound  = WaitForChild(Handle, 'FireSound')
+
+	MyCharacter = Tool.Parent
+	MyPlayer = game:GetService('Players'):GetPlayerFromCharacter(MyCharacter)
+	MyHumanoid = MyCharacter:FindFirstChild('Humanoid')
+	MyTorso = MyCharacter:FindFirstChild('Torso')
+	MyMouse = mouse
+	WeaponGui = WaitForChild(Tool, 'WeaponHud'):Clone()
+	if WeaponGui and MyPlayer then
+		WeaponGui.Parent = MyPlayer.PlayerGui
+		UpdateAmmo(AmmoInClip)
+	end
+	if RecoilAnim then
+		RecoilTrack = MyHumanoid:LoadAnimation(RecoilAnim)
+	end
+
+	if MyMouse then
+		-- Disable mouse icon
+		MyMouse.Icon = "http://www.roblox.com/asset/?id=18662154"
+		MyMouse.Button1Down:connect(OnMouseDown)
+		MyMouse.Button1Up:connect(OnMouseUp)
+		MyMouse.KeyDown:connect(OnKeyDown)
+	end
+end
+
+
+-- Unequip logic here
+function OnUnequipped()
+	LeftButtonDown = false
+	Reloading = false
+	MyCharacter = nil
+	MyHumanoid = nil
+	MyTorso = nil
+	MyPlayer = nil
+	MyMouse = nil
+	if OnFireConnection then
+		OnFireConnection:disconnect()
+	end
+	if OnReloadConnection then
+		OnReloadConnection:disconnect()
+	end
+	if FlashHolder then
+		FlashHolder = nil
+	end
+	if WeaponGui then
+		WeaponGui.Parent = nil
+		WeaponGui = nil
+	end
+	if RecoilTrack then
+		RecoilTrack:Stop()
+	end
+end
+
+local function SetReticleColor(color)
+	if WeaponGui and WeaponGui:FindFirstChild('Crosshair') then
+		for _, line in pairs(WeaponGui.Crosshair:GetChildren()) do
+			if line:IsA('Frame') then
+				line.BorderColor3 = color
+			end
+		end
+	end
+end
+
+
+Tool.Equipped:connect(OnEquipped)
+Tool.Unequipped:connect(OnUnequipped)
+
+while true do
+	wait(0.033)
+	if WeaponGui and WeaponGui:FindFirstChild('Crosshair') and MyMouse then
+		WeaponGui.Crosshair.Position = UDim2.new(0, MyMouse.X, 0, MyMouse.Y)
+		SetReticleColor(NeutralReticleColor)
+
+		local target = MyMouse.Target
+		if target and target.Parent then
+			local player = PlayersService:GetPlayerFromCharacter(target.Parent)
+			if player then
+				if MyPlayer.Neutral or player.TeamColor ~= MyPlayer.TeamColor then
+					SetReticleColor(EnemyReticleColor)
+				else
+					SetReticleColor(FriendlyReticleColor)
+				end
+			end
+		end
+	end
+	if Spread and not IsShooting then
+		local currTime = time()
+		if currTime - LastSpreadUpdate > FireRate * 2 then
+			LastSpreadUpdate = currTime
+			Spread = math.max(MinSpread, Spread - AimInaccuracyStepAmount)
+			UpdateCrosshair(Spread, MyMouse)
+		end
+	end
+end
+end,
+function(script,require)
+-- I like being simple.
+
+local Tool = script.Parent
+local Handle = Tool:WaitForChild("Handle")
+local Receiver = Tool:WaitForChild("Receiver")
+local Flash = Tool:WaitForChild("Flash")
+local Spur = Flash:WaitForChild("Image")
+local Smoke = Flash:WaitForChild("ImageTwo")
+
+Receiver.OnServerEvent:connect(function (player, action, ...)
+	local Data = {...}
+	if action and Data then
+		if action == "PlaySound" then
+			if Handle:FindFirstChild(Data[1]) then
+				Handle[Data[1]]:Play()
+			end
+		elseif action == "Flash" then
+			Handle:WaitForChild("Flash").Enabled = Data[1]
+			Flash:WaitForChild("Embers").Enabled = Data[1]
+			Spur:WaitForChild("Flash").Rotation = math.random(0, 360)
+			Smoke:WaitForChild("Flash").Rotation = math.random(0, 360)
+			Spur.Enabled = Data[1]
+			Smoke.Enabled = Data[2]
+		elseif action == "Damage" then
+			if Data[1]:IsA("Humanoid") and type(Data[2]) == "number" then
+				Data[1]:TakeDamage(Data[2])
+			end
+		end
 	end
 end)
 end,
 function(script,require)
-local handle = script.Parent.End
-local doorOpen = false
-local changingState = false
-local soundo = script.Parent.End.Close
-local soundc = script.Parent.End.Open
-handle.ProximityPrompt.Triggered:Connect(function(player, part)
---handle.ClickDetector.MouseClick:Connect(function(player, part)
-	if doorOpen == true and changingState == false then
-		changingState = true
-		soundo:Play()
-		for i = 1, 16 do
-			script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame * CFrame.new(0, 0, 0.1))
-			wait(0.0001)
-		end
-		
-		changingState = false
-		doorOpen = false
-	elseif changingState == false then
-		changingState = true
-		soundc:Play()
-		for i = 1, 16 do
-			script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame * CFrame.new(0, 0, -0.1))
-			wait(0.0001)
+Tool = script.Parent;
+local humanoid = nil
+local arms = nil
+local torso = nil
+local welds = {}
 
+function Equip(mouse)
+	wait(0.01)
+	humanoid = Tool.Parent:WaitForChild("Humanoid")
+	if humanoid.RigType == Enum.HumanoidRigType.R15 then
+		arms = {Tool.Parent:FindFirstChild("LeftUpperArm"), Tool.Parent:FindFirstChild("RightUpperArm"),Tool.Parent:FindFirstChild("LeftLowerArm")}
+		torso = Tool.Parent:FindFirstChild("UpperTorso")
+		if arms ~= nil and torso ~= nil then
+			local sh = {arms[1]:FindFirstChild("LeftShoulder"), arms[2]:FindFirstChild("RightShoulder"),arms[3]:FindFirstChild("LeftElbow")}
+			if sh ~= nil then
+				local yes = true
+				if yes then
+					yes = false
+					sh[1].Part1 = nil
+					sh[2].Part1 = nil
+					sh[3].Part1 = nil
+					local weld1 = Instance.new("Weld")
+					weld1.Part0 = torso
+					weld1.Parent = torso
+					weld1.Part1 = arms[1]
+					weld1.C1 = CFrame.new(1, 0.2, 0.1) * CFrame.fromEulerAnglesXYZ(math.rad(-90), math.rad(50), 0)
+					welds[1] = weld1
+					local weld2 = Instance.new("Weld")
+					weld2.Part0 = torso
+					weld2.Parent = torso
+					weld2.Part1 = arms[2]
+					weld2.C1 = CFrame.new(-1, -0.2, 0.15) * CFrame.fromEulerAnglesXYZ(math.rad(-75), math.rad(-10), 0)
+					welds[2] = weld2
+					local weld3 = Instance.new("Weld")
+					weld3.Part0 = torso
+					weld3.Parent = torso
+					weld3.Part1 = arms[3]
+					weld3.C1 = CFrame.new(1.35, 0.8, 0.1) * CFrame.fromEulerAnglesXYZ(math.rad(-90), math.rad(60), 0)
+					welds[3] = weld3
+				end
+			end
 		end
-	
-		changingState = false
-		doorOpen = true
+	else
+		arms = {Tool.Parent:FindFirstChild("Left Arm"), Tool.Parent:FindFirstChild("Right Arm")}
+		torso = Tool.Parent:FindFirstChild("Torso")
+		if arms ~= nil and torso ~= nil then
+			local sh = {torso:FindFirstChild("Left Shoulder"), torso:FindFirstChild("Right Shoulder")}
+			if sh ~= nil then
+				local yes = true
+				if yes then
+					yes = false
+					sh[1].Part1 = nil
+					sh[2].Part1 = nil
+					local weld1 = Instance.new("Weld")
+					weld1.Part0 = torso
+					weld1.Parent = torso
+					weld1.Part1 = arms[1]
+					weld1.C1 = CFrame.new(-0.249, 1, 1) * CFrame.fromEulerAnglesXYZ(math.rad(300), 0, math.rad(-90))
+					welds[1] = weld1
+					local weld2 = Instance.new("Weld")
+					weld2.Part0 = torso
+					weld2.Parent = torso
+					weld2.Part1 = arms[2]
+					weld2.C1 = CFrame.new(-1.15,.4, 0.35) * CFrame.fromEulerAnglesXYZ(math.rad(-90), math.rad(-15), 0)
+					welds[2] = weld2
+				end
+			end
+		end
 	end
-end)
+end
+
+function Unequip(mouse)
+	if humanoid.RigType == Enum.HumanoidRigType.R15 then
+		if arms ~= nil and torso ~= nil then
+			local sh = {arms[1]:FindFirstChild("LeftShoulder"), arms[2]:FindFirstChild("RightShoulder"),arms[3]:FindFirstChild("LeftElbow")}
+			if sh ~= nil then
+				local yes = true
+				if yes then
+					yes = false
+					sh[1].Part1 = arms[1]
+					sh[2].Part1 = arms[2]
+					sh[3].Part1 = arms[3]
+					welds[1]:Destroy()
+					welds[2]:Destroy()
+					welds[3]:Destroy()
+				end
+			end
+		end
+	else
+		if arms ~= nil and torso ~= nil then
+			local sh = {torso:FindFirstChild("Left Shoulder"), torso:FindFirstChild("Right Shoulder")}
+				if sh ~= nil then
+				local yes = true
+				if yes then
+					yes = false
+					sh[1].Part1 = arms[1]
+					sh[2].Part1 = arms[2]
+					welds[1].Parent = nil
+					welds[2].Parent = nil
+				end
+			end
+		end
+	end
+end
+Tool.Equipped:connect(Equip)
+Tool.Unequipped:connect(Unequip)
+
+
+
 end,
 function(script,require)
-local handle = script.Parent.End
-local doorOpen = false
-local changingState = false
-local key = false
-local soundo = script.Parent.End.Close
-local soundc = script.Parent.End.Open
-handle.ProximityPrompt.Triggered:Connect(function(player, part)
---handle.ClickDetector.MouseClick:Connect(function(player, part)
-	if doorOpen == true and changingState == false then
-		changingState = true
-		soundo:Play()
-		for i = 1, 16 do
-			script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame * CFrame.new(0, 0, 0.1))
-			wait(0.0001)
-		end
-		if key ~= false then
-			script.Parent.Key.ProxPart.ProximityPrompt.Enabled = false
-			script.Parent.Key.md.Prompt.Enabled = false
-		end
-		changingState = false
-		doorOpen = false
-	elseif changingState == false then
-		changingState = true
-		soundc:Play()
-		for i = 1, 16 do
-			script.Parent:SetPrimaryPartCFrame(script.Parent.PrimaryPart.CFrame * CFrame.new(0, 0, -0.1))
-			wait(0.0001)
-
-		end
-		if key ~= false then
-			script.Parent.Key.ProxPart.ProximityPrompt.Enabled = true
-			script.Parent.Key.md.Prompt.Enabled = true
-		end
-		changingState = false
-		doorOpen = true
+local Tool = script.Parent
+local Handle = script.Parent:WaitForChild("Handle")
+function Equipped(Mouse)
+	Player = script.Parent.Parent
+	if Player:FindFirstChild("Holster") then
+		Player.Holster:remove()
 	end
-end)
-end,
-function(script,require)
-local anim = script.Animation
-local animController = script.Parent.AnimationController
-local LoadAnim = animController:LoadAnimation(anim)
-script.Parent.ProximityPrompt.Triggered:Connect(function()
-	LoadAnim:Play()
-	script.Parent.Base.InteractSound:Play()
-end)
+end
 
+function Unequipped(Mouse)
+	if Player:FindFirstChild("Holster")==nil then
+	local Holster = Handle:Clone()
+local BackAttachment = Instance.new("Attachment")
+BackAttachment.Axis = Vector3.new(0, -1, 1) --change to (0,-1,-1) if you want it on the torso's front
+BackAttachment.Name = "WaistAttachment"
+BackAttachment.Parent = Holster
+Holster.Parent = Player
+Holster.Name = "Holster"
+local Torso = Player:FindFirstChild("UpperTorso") or Player:FindFirstChild("Torso")
+	if Torso then
+	local w=Instance.new("Motor")
+		w.Part0=Holster
+		w.Part1=Torso
+		w.C0=BackAttachment.CFrame+Vector3.new(0.635,0,0)
+		w.Parent=Holster
+	end
+end
+end
+Tool.Equipped:connect(Equipped)
+Tool.Unequipped:connect(Unequipped)
+
+if Player.Character.Humanoid.Health == 0 then
+	Player.Holster:remove()
+end
 end
 }
 local ScriptIndex = 0
@@ -238,6 +722,54 @@ function RunScripts()
 	end
 end
 
+
+local function DecodeUnion(Values,Flags,Parse,data)
+	local m = Instance.new("Folder")
+	m.Name = "UnionCache ["..tostring(math.random(1,9999)).."]"
+	m.Archivable = false
+	m.Parent = game:GetService("ServerStorage")
+	local Union,Subtract = {},{}
+	if not data then
+		data = Parse('B')
+	end
+	local ByteLength = (data % 4) + 1
+	local Length = Parse('I'..ByteLength)
+	local ValueFMT = ('I'..Flags[1])
+	for i = 1,Length do
+		local data = Parse('B')
+		local part
+		local isNegate = bit32.band(data,0b10000000) > 0
+		local isUnion =  bit32.band(data,0b01000000) > 0
+		if isUnion then
+			part = DecodeUnion(Values,Flags,Parse,data)
+		else
+			local isMesh = data % 2 == 1
+			local ClassName = Values[Parse(ValueFMT)]
+			part = Instance.new(ClassName)
+			part.Size = Values[Parse(ValueFMT)]
+			part.Position = Values[Parse(ValueFMT)]
+			part.Orientation = Values[Parse(ValueFMT)]
+			if isMesh then
+				local mesh = Instance.new("SpecialMesh")
+				mesh.MeshType = Values[Parse(ValueFMT)]
+				mesh.Scale = Values[Parse(ValueFMT)]
+				mesh.Offset = Values[Parse(ValueFMT)]
+				mesh.Parent = part
+			end
+		end
+		part.Parent = m
+		table.insert(isNegate and Subtract or Union,part)
+	end
+	local first = table.remove(Union,1)
+	if #Union>0 then
+		first = first:UnionAsync(Union)
+	end
+	if #Subtract>0 then
+		first = first:SubtractAsync(Subtract)
+	end
+	m:Destroy()
+	return first
+end
 
 local function Decode(str)
 	local StringLength = #str
@@ -481,84 +1013,30 @@ local function Decode(str)
 end
 
 
-local Objects = Decode('AEAmAiEFTW9kZWwhBE5hbWUhCFdhcmRyb2JlIQtQcmltYXJ5UGFydCEKV29ybGRQaXZvdARIAL8BwAEhCkxvYWRNb2R1bGUhCE1lc2hQYXJ0IQVEb29yMSEKQnJpY2tDb2xvcgeoACEGQ0ZyYW1lBBkAwQHCASEIQ2FuVG91Y2gCIQVDb2xvcgZ1Yl4hCE1hc3NsZXNz'
-..'IiEITWF0ZXJpYWwDAAAAAAAAgEAhC09yaWVudGF0aW9uCgAAAAC4nrPCAAAAACEIUG9zaXRpb24KwpKDwoeJikAQuytCIQhSb3RhdGlvbiEEU2l6ZQooOidAMIr0QI7iSz4hBk1lc2hJZCEXcmJ4YXNzZXRpZDovLzY3OTgzNTMxNDUhCE1lc2hTaXplCij5XEEikSFC'
-..'1LSGPyEES25vYgdvAAQoAMEBwgEhEENvbGxpc2lvbkdyb3VwSWQDAAAAAAAA8D8Gv7mvAwAAAAAAAJFACppHg8LERkVAOrYnQgryvdg+okX6Pt9wpD4hF3JieGFzc2V0aWQ6Ly82Nzk4MzUzMzM2CkZmD0BclSVAwJfZPyEKTWFudWFsV2VsZCECQzAEwwHEAcUBIQJD'
-..'MQTGAcQBxQEhBVBhcnQwIQVQYXJ0MSEKQXR0YWNobWVudAQ2AMUBxwEKAAAAAAAAAAAAALRCCgCZmT8AAAAAAAAAACEFRG9vcjIEOgDIAcIBCgAAAAAAALTCAAAAAArUkIPCJomKQKQfIUIhF3JieGFzc2V0aWQ6Ly82Nzk4MzUzMjI5BD0AyAHCAQrxQ4PCAkZFQPcj'
-..'JUIK873YPqJF+j7fcKQ+IRdyYnhhc3NldGlkOi8vNjc5ODM1MzQwMApHZg9AXJUlQMCX2T8EyQHEAcUBBEQAygHLAQoAAACAAAAAgAAAtMIKmpmZvwAAAAAAAAAAIQRNYWluIQhBbmNob3JlZARIAMgBwgEKmgeGwqqolECQbSZCCuG0vkAOoAxBLVEWQCEXcmJ4YXNz'
-..'ZXRpZDovLzY3OTgzNTI5MDkKs//7QSIYN0LcoEZBIQpEb29ySGluZ2UxBE4AxQHHAQqLpCFAevKhvmy6nb8hCkRvb3JIaW5nZTIEUQDKAcsBCm2vIcB68qG+iLqdvyEORXhpdEF0dGFjaG1lbnQEVADLAcUBCgAAAAAAAGC/AACIwCEOSGlkZUF0dGFjaG1lbnQEVwDL'
-..'AcUBCgAA0Lkg+38+AND/PiEHTW90b3I2RATMAcsBxQEEzQHLAcUBBM4BzwHFAQTQAcsBxQEhD0VudGVyQXR0YWNobWVudARgAMcBxQEKAAAAgAAANEMAAAAACgAAAAD0/1+/AACIwCEEV29vZAdjAQRlAMgBwgEGa1lWCpoHhsJqmJdAkG0mQgqxdsxA6FoXQYVmLEAh'
-..'F3JieGFzc2V0aWQ6Ly82Nzk4MzUzMDYyCrQWB0L//0dCKs9jQSEVTm9Db2xsaXNpb25Db25zdHJhaW50BNEB0gHTASEJV2VkZ2VQYXJ0IQ5Db2xsaXNpb25XZWRnZSENQm90dG9tU3VyZmFjZQMAAAAAAAAAAARzANQB1QEDAAAAAAAAEEADAAAAAADAmEAKAAC0QgAA'
-..'tEIAAAAAClT/gsKgAIA+OG0mQgoAALRCAAAAAAAAtMIKAADIQAAAAD8AAAA/IQxUcmFuc3BhcmVuY3kEeADUAdUBClr/hcJQ/x8/OG0mQgoAAMhAAAAgQAAAgD4hE0FuaW1hdGlvbkNvbnRyb2xsZXIhCEFuaW1hdG9yIQlBbmltYXRpb24hCkFuaW1fRW50ZXIhC0Fu'
-..'aW1hdGlvbklkIRhyYnhhc3NldGlkOi8vMTA2Njk2OTQzMDEhCUFuaW1fRXhpdCEYcmJ4YXNzZXRpZDovLzEwNjY5Njk4NDQxIQ1BbmltX0ZvcmNlT3V0IRhyYnhhc3NldGlkOi8vMTA2Njk3MDE4MDkhD0FuaW1fRW50ZXJNb2RlbCEYcmJ4YXNzZXRpZDovLzEwNjY5'
-..'Njk2MzY1IQ5BbmltX0V4aXRNb2RlbCEYcmJ4YXNzZXRpZDovLzEwNjY5Njk5NzY0IQlBbmltU2F2ZXME1gHXAdgBIRBLZXlmcmFtZVNlcXVlbmNlIQ5BdXRvbWF0aWMgU2F2ZSEETG9vcCEIUHJpb3JpdHkDAAAAAABAj0AhCEtleWZyYW1lIQRQb3NlIQZXZWlnaHQE'
-..'wwHZAdoBBNsB3AHFASEEVGltZQMAAACgmZnJPwTdAd4BxQEE3wHgAeEBAwAAAEAzM9M/BMMB4gHFAQMAAACgmZnZPyEEUGFydCEMSGlkZVBvc2l0aW9uB/wDBKIA4wHkASEKQ2FuQ29sbGlkZQYA/wAKAAAAAPYot8IAAAAACr52hsJUAntAiAgnQgoAADTDCtewwgAA'
-..'NMMKjIqlPwAAgD8My4k/IQpUb3BTdXJmYWNlIQxFeGl0UG9zaXRpb24HTAEEqwDlAcIBBnUAAAoAAAAAAAC0QgAAAAAKzAGBwnSxTkCICCdCBzcBBK8A5QHCAQafoawKYNaCwupBkkA4ZyZCCpHTo0CkcOVA4MTzPiEGU2NyaXB0IQVTb3VuZCEKTG9ja2VyT3BlbiEN'
-..'UGxheWJhY2tTcGVlZAMAAACgmZnxPyESUm9sbE9mZk1heERpc3RhbmNlAwAAAAAAQH9AIRJSb2xsT2ZmTWluRGlzdGFuY2UDAAAAAAAACEAhB1NvdW5kSWQhF3JieGFzc2V0aWQ6Ly83MTIzMTczMDc2IQtMb2NrZXJDbG9zZSEXcmJ4YXNzZXRpZDovLzcxMjMxNzMx'
-..'NTYhD1Byb3hpbWl0eVByb21wdCEKQWN0aW9uVGV4dCEHU2tyacWIYSEVTWF4QWN0aXZhdGlvbkRpc3RhbmNlAwAAAAAAAC5AIQpPYmplY3RUZXh0IQRIaWRlIRNSZXF1aXJlc0xpbmVPZlNpZ2h0IRhyYnhhc3NldGlkOi8vMTExNDYzODcyNzEhB0RyZXNzZXIEzwDm'
-..'AecBIQdMb290TWF4AwAAAAAAAABAIQtMb290UGVyY2VudAMAAAAAAIBRQCEHTG9vdE1pbgTPAOYB6AEK8QuFwsj00T/o2TxCCs3ZQ0DH9FFAvzgfQCEXcmJ4YXNzZXRpZDovLzcxNTkwMjg3ODkKDMdWQPw+ZkDOmy5AIQdTaGVsdmVzBNUA5gHoAQrxC4XCyJzmP+jZ'
-..'PEIKo2M1QIKwKED+dhNAIRdyYnhhc3NldGlkOi8vNzE1OTAyODUyMgoc60ZAzP04QDG3IUAhD0RyYXdlckNvbnRhaW5lcgTmAOkB6gEhA0VuZAdlAQThAOkB6gEGnoV/IRhDdXN0b21QaHlzaWNhbFByb3BlcnRpZXMQmpmZPo/C9T7NzEw+AACAPwAAgD8KgaGEwiSR'
-..'JkAw2zxCCiseIkDA/eo+7n8GQCEXcmJ4YXNzZXRpZDovLzcxNTkwMjg1OTQK4MgxQKjZAD9ifxNACgAAAIAAALTCAAAAAArAlYLCJGorQCjbPEIKVaMoQC2CLz/CTwU+IRdyYnhhc3NldGlkOi8vNzE1OTAyODY1NQpY7zhAKHhAP9AxEj4EwwHrAcUBBOwB6wHFASEF'
-..'Q2xvc2UDAAAAAAAASUAhF3JieGFzc2V0aWQ6Ly83MTc4NTUyMTE3IQRPcGVuIRdyYnhhc3NldGlkOi8vNzE3ODU1MjA2NyEIxaB1ZmzDrWsDAAAAAAAAFEAhCEludGVyYWN0IQZIb2xkZXIE9gDmAegBCnZuh8IkkSZA79k8QgowAP0/MAD9PSHwrT8hCkhvbGRBdHRh'
-..'Y2gE+gDEAcUBChognjoAAAAAAAAAACEFS25vYnME/QDpAeoBClBUgsLEkypAKNs8QgphHuo/tVSKPoDDPT4hF3JieGFzc2V0aWQ6Ly83MTU5MDI4NzE5CixfAEDwspc+KBpQPgTtAesBxQEhCkxvb3RIb2xkZXIEBAHuAe8BCvWmhMKElCZAKNk8QiEEV2VsZATwAfEB'
-..'xQEE8gHrAcUBIQlTcGF3blBpbGUDAAAAAAAAcUAKAADAPwAAAD4AAIA/IQZQZW5jaWwHYgEEEAHzAe8BBri5uQoAAAAAAACgwAAAAAAKFZKEwiRhJ0AkvTpCChSXND+YT8U9K13APSEXcmJ4YXNzZXRpZDovLzk3NzUyNDQ4ODYKYCwbQnCKqUBASqVABMMB9AH1AQT2'
-..'AcsBxQEhC1NwZWNpYWxNZXNoIQZPZmZzZXQKAAAAAJqZGb4AAAAAIQhNZXNoVHlwZQMAAAAAAAAYQAQdAfcB7wEKAAAAALieLcMAAAAAChWShMIkYSdAfC48QgoAADTD9ijMwAAANMMEwwH4AcUBBPkBywHFAQQjAfoB7wEKAAAAANdjE8MAAAAACgWShMIkYSdAWF8+'
-..'QgoAADTDpHACwgAANMMEwwH7AcUBBPwBywHFASEMRHJhd2VyU2NyaXB0BCsB/QH+AQQqAf0B/gEKHa6EwsjL2D8o2zxCCmCigsKIfeI/KNs8QgQtAeYB6AEKca6EwsjL2D/o2TxCBC8B/QH+AQrwYILCCNHgPyjbPEIhE0FjdGl2YXRlRXZlbnRQcm9tcHQhBkRyYXdl'
-..'ciEFU3R5bGUhDEludGVyYWN0aW9ucwQ1Af8BAAIKkbOEwki82D8w2TxCBAEC8QHFAQQCAusBxQEhCUNvbnRhaW5lcgdrAQQ9AQMCAAIGb2NgCgAAAAAAAHBBAAAAAApJq4TC8MvfP3h2P0IK5kYIP/IFTT7sMao+IRdyYnhhc3NldGlkOi8vOTc3NTI0NTAwMAoBAEhC'
-..'LHKWQTHH+UEEwwEEAsUBBAUCywHFAQREAQYCAAIKsZ6EwolV2j8svTlCBAcCywHFASEFUGFwZXIHVAEETAEIAgACBvjkwgMAAAAAAECUQAoAAAAAAAAgwQAAAAAKAbmEwkuT0z8Q3TxCCloSTT+RvRc8i6UOPwTDAQkC9QEECgLLAcUBIQZMZXR0ZXIH6QMEVQELAgAC'
-..'Bv/56goAAAAAAAAqwwAAAAAKkaiEwkbl0D/0IT5CCgAANEMAACDBAAA0QwopXA8/1+wwPfoCbz8hF3JieGFzc2V0aWQ6Ly85Nzg2NzY2NDc1CnXg70EWG1dAAABIQgTDAQwCxQEEDQLLAcUBIQlJdGVtU3Bhd24HnQAEYAH/AQACBvT/ewpRqITCTr7uP9jVO0IKAHjA'
-..'Pgyw+T4elb8+BA4CywHFAQRmAf0BDwIEZQH9AQ8CCh2uhMIQ1E4/KNs8QgpgooLCkDdiPyjbPEIEaAHmAegBCnGuhMIQ1E4/6Nk8QgRqAf0BDwIK8GCCwhDeXj8o2zxCBGwB/wEQAgqRs4TCkPBOPzDZPEIEEQLxAcUBBBIC6wHFAQRwARMCEAIKSauEwt8PXT94dj9C'
-..'BHIBFAIQAgqxnoTCEiNSPyy9OUIEdAEVAhACCgG5hMKWnkQ/EN08QgR2ARYCEAIKkaiEwo1CPz/0IT5CBHgB/wEQAgpRqITCnfR6P9jVO0IhBVRhYmxlBHwBFwIYAgR8ARcCGQIKNk+Fwoy80T+HNFZCClM3/UCKvFFAGA4fQCEXcmJ4YXNzZXRpZDovLzcyMjU0NTYz'
-..'MzMKQf0rQQJ1jkAIEVhABIEBFwIZAgqePIXCZmQrQAtDVkIKUmnhQLaWYD9hmQ5AIRdyYnhhc3NldGlkOi8vNzIyNTQ1NjAwNwozKxlBFpyYP1zLQUAEhgEXAhkCChpPhcKMoOY/zzhWQgoTh/VAt58pQHxPE0AhF3JieGFzc2V0aWQ6Ly83MjI1NDU2Mzk5CmHEJkFy'
-..'bGZAvBxIQASYARoCGwIDAAAAAAAAPkAEjQEaAhsCCmaVgsIGiCpAC0VWQgrPG4tAs1SKPn7DPT4hF3JieGFzc2V0aWQ6Ly83MTU5MDI5MTY3CkqNmEDwspc+KBpQPgQcAusBxQEElAEaAhsCBoNuaQq04oTCZoUmQA9FVkIKY2KwQL396j7sfwZAIRdyYnhhc3NldGlk'
-..'Oi8vNzE1OTAyOTA1OQoObsFAqNkAP2J/E0AK29aCwkZeK0ALRVZCCvaks0Apgi8/v08FPiEXcmJ4YXNzZXRpZDovLzcxNTkwMjkxMTUKRwHFQCh4QD/QMRI+BB0C6wHFASEJRGVza19CZWxsBKYBHgIfAiERSW50ZXJhY3RBbmltYXRpb24hGHJieGFzc2V0aWQ6Ly8x'
-..'MTIxNzgxMDQ4OSEEQmFzZQdTAQSmASACIQIhCkNhc3RTaGFkb3cGQjUlCipWhcJeCmhAV55LQgo1Xno/mG4yPzVeej8hF3JieGFzc2V0aWQ6Ly83NzU5NDExMjk5CrBZ7j+Jz6k/sFnuPyENSW50ZXJhY3RTb3VuZAMAAAAAAMBiQCELUm9sbE9mZk1vZGUhF3JieGFz'
-..'c2V0aWQ6Ly8xOTQwODgzNDc5IQZWb2x1bWUhA1RvcAQiAssBxQEEswEgAiECBntmVQoqVoXC6DlyQFeeS0IKtr11PyFOIT+2vXU/IRdyYnhhc3NldGlkOi8vNzc1OTI0ODM2NwrdOURCq80AQt45REIhCFp2b27EjWVrIQRSaW5nBCMCIAIhAgQkAssBxQEDAAAAIBER'
-..'oT8EJQLLAcUBAwAAACAREbE/BCYCywHFAQoAAAAAFn+klgAAgD8Kuh7ulwAAgD8Wf6SWCmahXDu7syeXof9/Pwq6Hm6YAACAPxZ/JJcKAAAAAAAAAAAAAAAACgAAAAAAAAAAAACAPwoAAAAAAACAPwAAAAAKV4qAv5OYn7+FxRm+CgAAgL8AAAAAAAAAAAoAAAAAFn8k'
-..'lwAAgD8KWYqAP5OYn7+FxRm+CgAAAAAAAIC/AAAAAAoAAIA/AAAAAAAAAAAKwN4kwFj4ob6AsZ2/CgEAoL8AAAi1KIGfHgoA2CRAMPKhvsA0nb8Kof9/PwAAAABmoVy7CsX/nz/K/w8gAB2LOwpOf4XC6guCQCBtJkIKAGCgON/SxzX//3+/Cv//fz+nwec1AGCgOAoA'
-..'gKA4zf7HNQAAgL8KAACAP1D+5zUAgKA4CrKiFkMAAKA2RG2OQgoAAACzjyDtIAAAgL8KFu6LogAAgD9mIO0gCq28Qr8AAAAAUCwmPwoAAAAA//9/PwAAAAAKAAAAAAAAADUAAAAACjqiLL8AAAAAigg9vwoAAIC1AAAAAAAAAAAKudp/PwAAAAAIHgo9CgAAAAAAAIA1'
-..'AAAANgry/38/AAAAAADImboKAAAAAPb/fz8AAAAACrsMfT8AAAAAqAMbPgow7eG8LOdxnhTnfz8K8kiJHAAAgD+Wc3IeCgAAAIAWfyQXAACAvwolAZA1SzNcqAAAgD8KteHeJwAAgD9DM1woCrTh3icAAIA/QzNcKAolAZA1/zqeLQAAgD8KpC9dMwAAgD9st56tCgAA'
-..'AAAAAAAAAACAvwoAAAAAQB2bPR/wgr8KAAAAAI9SgD35S5O/CiYhgDXSSJ4tAACAPwqkL10zAACAP4e3nq0K1ApgxdCdRULxAclECgAAALQAAAAAAQCAvwrfCmDFBp5FQkYCyUQKwwZ/P5JWXLNwcbI9CvBxsj0AAAAAwgZ/PwoAAACAAACAPwAAAAAKAAEHv0agTDwA'
-..'ACe9Cihqfr8y01szL5HjPQqwkOM9AAAAACpqfr8KAKwqvkagTDwAACe9ClCmV79mXTozJfQJPwoY9Ak/AAAAAFmmV78KABjDPkagTDwAgCe9CiUBkDVdKJ4tAACAPwp8d/uvAACAP0Innq0KJiGANT4oni0AAIA/Cnx3+68AAIA/QyeerQrUCmDFhEBJQvEByUQK3wpg'
-..'xQZASUJGAslEChtGdz8aVvAv/4mEvgrgiYS+AAAAAB9Gdz8KAFInP/D0YT0AgIS8CsMGfz8kX/svcHGyPQoAAUe/oKBMPAAAJ70KpRx8Pxld+S9VyjE+CpTKMT4AAAAAohx8PwoAAHg7qB8lvQAALjwKnxx8v2Hu9a/TyjE+CpTKMT4AAAAAohx8vwoAYqQ+MuB6vQAA'
-..'sLwKAKyBvjQQMD4AALS8CvyT+q8AAIA/QyeerQr8k/qvAACAP0Qnnq0K1ApgxZTLTELxAclECt8KYMUGzExCRgLJRAobRnc/W3rvL/+JhL4KwwZ/P4F8+i9wcbI9CqUcfD8OffgvVcoxPgqfHHy/Vg71r9PKMT4KAAAAABZ/JJYAAIA/CmS7gpwAAIA/Fn8klgpS+0Od'
-..'AACAPxZ/JJYKAAIEs8DMESUAAIA/Clhl0q4AAIA/wDAVpQoAAAAAhlVWvNPeAr4KAAAAAD8dmz2X8oK/CgAAgD/RTvobAAAAAApMbMGcAACAPxZ/JJYKAACAP7gSCJwAAAAACq4EIp0AAIA/Fn8klgoAAAAApPgiPgAAAAAKoLJOwoC8UUAvZGxCCgAAAABYGQW9AAAA'
-..'AAoAAAAAiBd2vQAAAAAKAAAAACADy70AAAAAtgEAAAIBAgADAAUABgAHAAMACAABDQACAAkACgALAAwADQAOAA8AEAARABIAEwAUABUAFgAXABgAGQAaABcAGwAcAB0AHgAfACAACAACDAACACEACgAiAAwAIwAkACUAEAAmABQAJwAWABcAGAAoABoAFwAbACkAHQAq'
-..'AB8AKwAsAAMCAC0ALgAvADAAMwACAwAMADQAFgA1ABgANgAIAAENAAIANwAKAAsADAA4AA4ADwAQABEAEgATABQAFQAWADkAGAA6ABoAOQAbABwAHQA7AB8AIAAIAAYMAAIAIQAKACIADAA8ACQAJQAQACYAFAAnABYAOQAYAD0AGgA5ABsAPgAdAD8AHwBAACwABwIA'
-..'LQAuAC8AQQAzAAYDAAwAQgAWAEMAGABEAAgAAQwAAgBFAEYAEwAKAAsADABHABAAEQAUABUAFgA5ABgASAAaADkAGwBJAB0ASgAfAEsAMwAKBAACAEwADABNABYANQAYAE4AMwAKBAACAE8ADABQABYAQwAYAFEAMwAKAwACAFIADABTABgAVAAzAAoDAAIAVQAMAFYA'
-..'GABXAFgACgMAAgA3AC0AWQAvAFoAWAAKAwACAAkALQBbAC8AXAAzAAoEAAIAXQAMAF4AFgBfABgAYAAIAAEMAAIAYQBGABMACgBiAAwAYwAQAGQAFAAVABYAOQAYAGUAGgA5ABsAZgAdAGcAHwBoAGkAEgAAaQASAABpABIAAAEAAQEABQBqAGsAFgsAAgBsAEYAEwBt'
-..'AG4ADABvACQAcAAUAHEAFgByABgAcwAaAHQAGwB1AHYAJQBrABYLAAIAbABGABMAbQBuAAwAdwAkAHAAFABxABYAcgAYAHgAGgB0ABsAeQB2ACUAegABAAB7ABkAAHwAAQIAAgB9AH4AfwB8AAECAAIAgAB+AIEAfAABAgACAIIAfgCDAHwAAQIAAgCEAH4AhQB8AAEC'
-..'AAIAhgB+AIcAAQABAgACAIgABQCJAIoAIAMAAgCLAIwADwCNAI4AjwAhAACQACICAAIARQCRAG4AkAAjAgACAAkADACSAJAAIwIAAgA3AAwAkwCPACEBAJQAlQCQACYCAAIARQCRAG4AkAAnAgACAAkADACWAJAAJwIAAgA3AAwAlwCPACEBAJQAmACQACoCAAIARQCR'
-..'AG4AkAArAgACAAkADACZAI8AIQEAlACaAJAALQIAAgBFAJEAbgCQAC4CAAIACQAMAJYAkAAuAgACADcADACXAJsAAQ0AAgCcAEYAEwBtAG4ACgCdAAwAngCfAA8AEACgABYAoQAYAKIAGgCjABsApAClAG4AdgAlAJsAAQ0AAgCmAEYAEwBtAG4ACgCnAAwAqACfAA8A'
-..'EACpABYAqgAYAKsAGgCqABsApAClAG4AdgAlAJsAAQwARgATAG0AbgAKAKwADACtAJ8ADwAQAK4AFgCqABgArwAaAKoAGwCwAKUAbgB2ACUAsQAzAACyADQFAAIAswC0ALUAtgC3ALgAuQC6ALsAsgA0BQACALwAtAC1ALYAtwC4ALkAugC9AL4AMwQAvwDAAMEAwgDD'
-..'AMQAxQAPALEAAQAAfAA4AQB+AMYAAQAAAgMCAMcABQDIAMkAygDLAMwAzQAlAAgAOgwAAgBFAEYAEwAKAGIADADOABAAZAAUABUAFgA5ABgAzwAaADkAGwDQAB0A0QAfANIACAA6DQACANMARgATAAoACwAMANQAJABwABAAEQAUABUAFgA5ABgA1QAaADkAGwDWAB0A'
-..'1wAfANgAAQA6AgQCANkABQDaAMsAzADNACUAyQDKAAcA2QAIAD0NAAIA2wBGABMACgDcAAwA3QAQAN4A3wDgABQAFQAWADkAGADhABoAOQAbAOIAHQDjAB8A5AAzAD4CAAwALgAWAOUACAA+DgACANsARgATAAoAYgAMANoAJAAlABAAZAASABMAFAAVABYAOQAYAOYA'
-..'GgA5ABsA5wAdAOgAHwDpACwAQAIALQDqAC8A6wCyAD4EAAIA7AC2AO0AuABwALoA7gCyAD4EAAIA7wC2AO0AuABwALoA8AC+AD4EAL8A8QDBAPIAwwDzAMUADwCbAD0OAAIA9ABGABMAbQBuAAoA3AAMAPUAJAAlABAA3gAUABUAFgA5ABgA9gAaADkAGwD3AKUAbgB2'
-..'ACUAMwBFBAACAPgADAD5ABYA5QAYAPoACAA9DgACAPsARgATAAoAIgAMAPwAJAAlABAAJgASABMAFAAnABYAOQAYAP0AGgA5ABsA/gAdAP8AHwAAASwARwIALQDqAC8AAQGbAD0OAAIAAgFGABMAbQBuAAoA3AAMAAMBJAAlABAA3gAUABUAFgA5ABgABAEaADkAGwD3'
-..'AKUAbgB2ACUAMwBJBAACAPgADAD5ABYA5QAYAPoABQFJAgAtAAYBLwAHAZsASQ4AAgAIAW0AbgAMAAMBnwAPAA4ADwAkACUAEgATABQACQEWADkAGAAEARoAOQAbAAoBpQBuAHYAJQAIAEwPAAIACwEKAAwBDAANAZ8ADwAOAA8AJAAlABAADgESABMAFAAVABYADwEY'
-..'ABABGgAPARsAEQEdABIBHwATASwATQMAAgAFAS0AFAEvABUBFgFMAgAXARgBGQEaAQgATA8AAgALAQoADAEMABsBnwAPAA4ADwAkACUAEAAOARIAEwAUABUAFgAcARgAHQEaAB4BGwARAR0AEgEfABMBLABQAwACAAUBLQAfAS8AIAEIAEwPAAIACwEKAAwBDAAhAZ8A'
-..'DwAOAA8AJAAlABAADgESABMAFAAVABYAIgEYACMBGgAkARsAEQEdABIBHwATASwAUgMAAgAFAS0AJQEvACYBBQFMAACxAD0BAAIAJwEBADoCBAIA2QAFACgBywDMAM0AJQDJAMoABwDZAAgAVg0AAgDbAEYAEwAKANwADAApARAA3gDfAOAAFAAVABYAOQAYACoBGgA5'
-..'ABsA4gAdAOMAHwDkADMAVwIADAAuABYA5QAIAFcOAAIA2wBGABMACgBiAAwAKAEkACUAEABkABIAEwAUABUAFgA5ABgAKwEaADkAGwDnAB0A6AAfAOkALABZAgAtAOoALwDrALIAVwQAAgDsALYA7QC4AHAAugDuALIAVwQAAgDvALYA7QC4AHAAugDwAL4AVwQAvwDx'
-..'AMEA8gDDAPMAxQAPAJsAVg4AAgD0AEYAEwBtAG4ACgDcAAwALAEkACUAEADeABQAFQAWADkAGAAtARoAOQAbAPcApQBuAHYAJQAzAF4EAAIA+AAMAPkAFgDlABgA+gAIAFYOAAIA+wBGABMACgAiAAwALgEkACUAEAAmABIAEwAUACcAFgA5ABgALwEaADkAGwD+AB0A'
-..'/wAfAAABLABgAgAtAOoALwABAb4AYAYBAgAwAb8A7wDBABoBwwAxAcUADwAyASUAMwHKAJsAVg4AAgACAUYAEwBtAG4ACgDcAAwANAEkACUAEADeABQAFQAWADkAGAA1ARoAOQAbAPcApQBuAHYAJQAzAGMEAAIA+AAMAPkAFgDlABgA+gAFAWMCAC0ANgEvADcBmwBj'
-..'DgACAAgBbQBuAAwANAGfAA8ADgAPACQAJQASABMAFAAJARYAOQAYADUBGgA5ABsACgGlAG4AdgAlAAgAZg8AAgA4AQoAOQEMADoBnwAPAA4ADwAkACUAEAA7ARIAEwAUACcAFgA8ARgAPQEaADwBGwA+AR0APwEfAEABLABnAgAtAEEBLwBCAQgAZg8AAgALAQoADAEM'
-..'AEMBnwAPAA4ADwAkACUAEAAOARIAEwAUABUAFgAPARgARAEaAA8BGwARAR0AEgEfABMBLABpAgAtABQBLwBFAZsAZg8AAgBGAW0AbgAKAEcBDABIAZ8ADwAOAA8AJAAlABAASQESABMAFABKARYASwEYAEwBGgBLARsATQGlAG4ALABrAgAtAE4BLwBPARYBZgIAFwEY'
-..'ARkBGgEIAGYPAAIAUAEKAFEBDABSAZ8ADwAOAA8AJAAlABAAUwESABMAFABKARYAVAEYAFUBGgBWARsAVwEdAFgBHwBZASwAbgIALQBaAS8AWwGbAGYQAAIAXAFtAG4ACgBdAQwAXgGfAA8ADgAPACQAJQAQAF8BEgATABQACQEWADkAGABgARoAOQAbAGEBpQBuAHYA'
-..'JQAsAHABAC8AYgEFAWYAALEAVgEAAgAnAQEAOgIEAgDZAAUAYwHLAMwAzQAlAMkAygAHANkACAB0DQACANsARgATAAoA3AAMAGQBEADeAN8A4AAUABUAFgA5ABgAZQEaADkAGwDiAB0A4wAfAOQAMwB1AgAMAC4AFgDlALIAdQQAAgDvALYA7QC4AHAAugDwALIAdQQA'
-..'AgDsALYA7QC4AHAAugDuAAgAdQ4AAgDbAEYAEwAKAGIADABjASQAJQAQAGQAEgATABQAFQAWADkAGABmARoAOQAbAOcAHQDoAB8A6QAsAHkCAC0A6gAvAOsAvgB1BAC/APEAwQDyAMMA8wDFAA8AmwB0DgACAPQARgATAG0AbgAKANwADABnASQAJQAQAN4AFAAVABYA'
-..'OQAYAGgBGgA5ABsA9wClAG4AdgAlADMAfAQAAgD4AAwA+QAWAOUAGAD6AAgAdA4AAgD7AEYAEwAKACIADABpASQAJQAQACYAEgATABQAJwAWADkAGABqARoAOQAbAP4AHQD/AB8AAAEsAH4CAC0A6gAvAAEBvgB+BgECADABvwDvAMEAGgHDADEBxQAPADIBJQAzAcoA'
-..'mwB0DgACAAIBRgATAG0AbgAKANwADABrASQAJQAQAN4AFAAVABYAOQAYAGwBGgA5ABsA9wClAG4AdgAlADMAgQQAAgD4AAwA+QAWAOUAGAD6AAUBgQIALQBtAS8AbgGbAIEOAAIACAFtAG4ADABrAZ8ADwAOAA8AJAAlABIAEwAUAAkBFgA5ABgAbAEaADkAGwAKAaUA'
-..'bgB2ACUACACEDwACADgBCgA5AQwAbwGfAA8ADgAPACQAJQAQADsBEgATABQAJwAWADwBGABwARoAPAEbAD4BHQA/AR8AQAEsAIUCAC0AQQEvAEIBCACEDwACAAsBCgAMAQwAcQGfAA8ADgAPACQAJQAQAA4BEgATABQAFQAWAA8BGAByARoADwEbABEBHQASAR8AEwEs'
-..'AIcCAC0AFAEvAEUBmwCEDwACAEYBbQBuAAoARwEMAHMBnwAPAA4ADwAkACUAEABJARIAEwAUAEoBFgBLARgAdAEaAEsBGwBNAaUAbgAsAIkCAC0ATgEvAE8BFgGEAgAXARgBGQEaAQgAhA8AAgBQAQoAUQEMAHUBnwAPAA4ADwAkACUAEABTARIAEwAUAEoBFgBUARgA'
-..'dgEaAFYBGwBXAR0AWAEfAFkBLACMAgAtAFoBLwBbAZsAhBAAAgBcAW0AbgAKAF0BDAB3AZ8ADwAOAA8AJAAlABAAXwESABMAFAAJARYAOQAYAHgBGgA5ABsAYQGlAG4AdgAlACwAjgEALwBiAQUBhAAAsQB0AQACACcBAQAAAgACAHkBBQB6AQgAkg0AAgBFAEYAEwAK'
-..'AGIADAB7ASQAcAAQAGQAFAAVABYAOQAYAHwBGgA5ABsAfQEdAH4BHwB/AQgAkg0AAgDTAEYAEwAKAGIADACAASQAcAAQAGQAFAAVABYAOQAYAIEBGgA5ABsAggEdAIMBHwCEAQgAkg0AAgDTAEYAEwAKAGIADACFASQAcAAQAGQAFAAVABYAOQAYAIYBGgA5ABsAhwEd'
-..'AIgBHwCJAQEAkgIEAgDZAAUAigHLAIsBzQAlAMkAuQAHANkACACWDgACAPsARgATAAoAIgAMAIwBJAAlABAAJgASABMAFAAnABYAOQAYAI0BGgA5ABsAjgEdAI8BHwCQASwAlwIALQDqAC8AkQEIAJYNAAIARQBGABMACgALAAwAkgEQAJMB3wDgABQAFQAWADkAGACU'
-..'ARoAOQAbAJUBHQCWAR8AlwEzAJkCAAwALgAWAOUACACWDgACANsARgATAAoAYgAMAIoBJAAlABAAZAASABMAFAAVABYAOQAYAJgBGgA5ABsAmQEdAJoBHwCbASwAmwIALQDqAC8AnAGyAJsEAAIA7wC2AO0AuABwALoA8ACyAJsEAAIA7AC2AO0AuABwALoA7gC+AJsD'
-..'AL8A8QDDAPMAxQAPALEAlgEAAgAnAQEAAAIAAgCdAQUAngF6AKEAAHsAogAAfAChAgACAJ8BfgCgAQgAoQsAAgChAUYAEwAKAKIBDACjAaQBDwAQAKUBFAAnABgApgEbAKcBHQCoAR8AqQGyAKUGAAIAqgG0ALUAtgCrAawBygC6AK0BrgGaAFgApQIAAgCvAS0AsAEI'
-..'AKENAAIArwEKAAsADACxAZ8ADwAOAA8ApAEPACQAJQAQALIBFAAnABgAswEbALQBHQC1AR8AtgG+AKECAL8AtwHDALgBAQChAgACAIgABQC5AYoAqgMAAgCLAIwADwCNAI4AjwCrAACQAKwCAAIAoQGRAG4AkACtAgACAK8BDAC6AY8AqwEAlAC7AZAArwIAAgChAZEA'
-..'bgCQALACAAIArwEMALwBjwCrAQCUAL0BkACyAgACAKEBkQBuAJAAswIAAgCvAQwAvgGxAKEAAHwAtQEAfgCgAU4BBAAKBDEAAwQyAAIIMQAHCDIABg8xAAoPMgAGEDEAChAyAAITMQASEzIAAhQxABIUMgAGFTEAAhUyAAY6BAA7PQQAQEExAEBBMgA+SDEAR0gyAD5L'
-..'MQBJSzIAPk4xAE1OMgBMUTEAUFEyAExTMQBSUzIATFQxAExUMgBJVgQAWVoxAFlaMgBXYTEAYGEyAFdlMQBjZTIAV2gxAGdoMgBmajEAaWoyAGZsMQBrbDIAZm8xAG5vMgBmcTEAcHEyAGZyMQBmcjIAY3QEAHl6MQB5ejIAdX8xAH5/MgB1gzEAgYMyAHWGMQCFhjIA'
-..'hIgxAIeIMgCEijEAiYoyAISNMQCMjTIAhI8xAI6PMgCEkDEAhJAyAIGSBACTlgQAm5gxAJeYMgCbnDEAm5wyAJmhBAClpzEApacyAKg=')
+local Objects = Decode('AADzIQVNb2RlbCEETmFtZSENQUstNDcgU3Bhd25lciEKV29ybGRQaXZvdATo6eohDlVuaW9uT3BlcmF0aW9uIRBFcXVpcG1lbnRTcGF3bmVyIQhBbmNob3JlZCIhCkJyaWNrQ29sb3IHZgAhBkNGcmFtZQQT6eohBUNvbG9yBm6ZyiEITWF0ZXJpYWwDAAAAAAAAkUAh'
+..'CFBvc2l0aW9uCjBcTcIAAAA/YOyAQiEEU2l6ZQoBAIBABQCAPwAAgEAhDFVzZVBhcnRDb2xvciEEUGFydAoAAIBAAACAQAAAgEAKMFxNwgAAAEBg7IBCCgAAAAAAALRCAAC0wgMAAAAAAAAQQAoAAIA/AACAPwAAgD8KAAAAAAAAAAAAAAAACgAAgEAAAEBAAACAQAow'
+..'XE3CAQAgQGDsgEIhClBvaW50TGlnaHQhCkJyaWdodG5lc3MDAAAAAAAAAEAGAKr/IQdTaGFkb3dzIQVSYW5nZQMAAAAAAAAkQCENQ29uZmlndXJhdGlvbiEOQ29uZmlndXJhdGlvbnMhCEludFZhbHVlIQ1TcGF3bkNvb2xkb3duIQVWYWx1ZSEGU2NyaXB0IQRUb29s'
+..'IQVBSy00NyEMQ2FuQmVEcm9wcGVkAiEER3JpcAQ2ODohC0dyaXBGb3J3YXJkCpdIRL6cq9S9udd5vyEHR3JpcFBvcwowWJC8EOGuPMvTbD8hCUdyaXBSaWdodArrYnc/K2ZGvmc+Lb4hBkdyaXBVcAoUoy8+/Lx5P37JDL4hB1Rvb2xUaXAhA0FVRyELTG9jYWxTY3Jp'
+..'cHQhBkNsaWVudCELUmVtb3RlRXZlbnQhCFJlY2VpdmVyIQVGbGFzaCENQm90dG9tU3VyZmFjZQMAAAAAAAAAAAdqAARK6+wG2oVBIQxGcm9udFN1cmZhY2UhC09yaWVudGF0aW9uCs3MDL/XI7BCXA8zQwqmLE3CuppbQIXxhUIhCFJvdGF0aW9uCjMzf8EAALBCAAAl'
+..'wwrNzEw+zcxMPs3MTD4hClRvcFN1cmZhY2UhDFRyYW5zcGFyZW5jeQMAAAAAAADwPyELU3BlY2lhbE1lc2ghBVNjYWxlCgAAwD8AAMA/AADAPyEMQmlsbGJvYXJkR3VpIQVJbWFnZSEHRW5hYmxlZCEGQWN0aXZlDAAAwD8AAAAAwD8AACEKSW1hZ2VMYWJlbCEQQmFj'
+..'a2dyb3VuZENvbG9yMwb///8hFkJhY2tncm91bmRUcmFuc3BhcmVuY3khDEJvcmRlckNvbG9yMyEPQm9yZGVyU2l6ZVBpeGVsDM3MzL0AAM3MzL0AAAyamZk/AACamZk/AAAhF3JieGFzc2V0aWQ6Ly8xMDY4MDkxMDg2IRFJbWFnZVRyYW5zcGFyZW5jeQMAAAAAAADQ'
+..'PyEISW1hZ2VUd28MAABAQAAAAABAQAAADAAAAL8AAAAAAL8AAAwAAABAAAAAAABAAAAhD1BhcnRpY2xlRW1pdHRlciEGRW1iZXJzIQxBY2NlbGVyYXRpb24KAAAAAAAAgL8AAAAAKAIAAAAA/1QAAACAP/9UACERRW1pc3Npb25EaXJlY3Rpb24hCExpZmV0aW1lEc3M'
+..'TD4AAIA/IQ1MaWdodEVtaXNzaW9uIQRSYXRlAwAAAAAAAFlAIQhSb3RTcGVlZBEAALTDAAC0QykCAAAAAAAAAD4AAAAAAACAPwAAAAAAAAAAIQVTcGVlZBEAAIBAAAAAQSELU3ByZWFkQW5nbGULAAC0QgAAtEIhB1RleHR1cmUhKWh0dHA6Ly93d3cucm9ibG94LmNv'
+..'bS9hc3NldC8/aWQ9MzE1NTUzNzAxKQUAAAAAAAAAAAAAAADhRZc+AAAAAAAAAAAwuhw/pqqqPQAAAAAAAFg/JH3SPgAAAAAAAIA/AACAPwAAAAAhBFdlbGQhAkMwBO3u6iECQzEE7/DxIQVQYXJ0MCEFUGFydDEhBlNlcnZlciEIQXJtc0hvbGQhCE1lc2hQYXJ0IQZI'
+..'YW5kbGUEivLzCgAAAAAAADTDAAAAAApgjE3CwJM+QCDMgEIKAAA0QwAAAAAAADTDCojInT4gT7o/CN2bQCEGTWVzaElkIRZyYnhhc3NldGlkOi8vNDc3MDA2NDk1IQhNZXNoU2l6ZQo+RQJBedIZQnOvAEMhCVRleHR1cmVJRCEWcmJ4YXNzZXRpZDovLzQ3NzAwNjUy'
+..'NSEFU291bmQhCkVxdWlwU291bmQhElJvbGxPZmZNYXhEaXN0YW5jZQMAAAAAAAA0QCEHU291bmRJZCEXcmJ4YXNzZXRpZDovLzM3NDI5MjgwNTQhDFRpbWVQb3NpdGlvbgMAAAAAAAD4PyEGVm9sdW1lAwAAAAAAAOg/IQlGaXJlU291bmQhFnJieGFzc2V0aWQ6Ly8x'
+..'Njg0MzY2NzEhBlJlbG9hZAMAAAAAAABJQCEEVGljayEdcmJ4YXNzZXQ6Ly9zb3VuZHMvL3N3aXRjaC53YXYG//9/AwAAAAAAADBAIQtCYWNrSG9sc3RlciEJQW5pbWF0aW9uIQZSZWNvaWwhC0FuaW1hdGlvbklkISdodHRwOi8vd3d3LnJvYmxveC5jb20vQXNzZXQ/'
+..'SUQ9OTQzMzEwODYhCVNjcmVlbkd1aSEJV2VhcG9uSHVkIQVGcmFtZSEHQW1tb0h1ZAYAAAAM0oOHPvf+Xa95P8T/DAAAAACaAAAAAAAlACEFU3R5bGUhCVRleHRMYWJlbCEMRm9yd2FyZFNsYXNoDAMuND4AAOX3Hb8AAAxCWSU/AACfdQNAAAAhBFRleHQhAXwhClRl'
+..'eHRDb2xvcjMhCFRleHRTaXplAwAAAAAAADhAIRBUZXh0U3Ryb2tlQ29sb3IzBn5+fiEWVGV4dFN0cm9rZVRyYW5zcGFyZW5jeSEIQ2xpcEFtbW8MUgVrPgAAspq4PQAADO9PIT4AAPZUXD8AACEDMTAwIQ5UZXh0WEFsaWdubWVudCEJVG90YWxBbW1vDGeyFD8AAO8K'
+..'mj4AAAy4JLw+AACPwvU+AAAhAzE4MAwAAIA/9/4AAIA/iP8MAAAAAMgAAAAAADIAIQdWaXNpYmxlDAAAAD8AAAAAAD8AACEERm9udCEBIAb/AAAhCUNyb3NzaGFpcgYA/wAMAAAAAPQBAAAAAPQBDAAAAACWAAAAAACWACEIVG9wRnJhbWUMAAAAAP//AAAAv/n/DAAA'
+..'AAACAAAAAAAOACEKUmlnaHRGcmFtZQwAAAA/+f8AAAAA//8MAAAAAA4AAAAAAAIAIQlMZWZ0RnJhbWUMAAAAv/n/AAAAAP//IQ5SZWxvYWRpbmdMYWJlbAwAAAAAFAAAAAAA7P8hAyAgIAMAAAAAAAAyQCEOVGV4dFlBbGlnbm1lbnQhC0JvdHRvbUZyYW1lDAAAAAD/'
+..'/wAAAD/5/yEOVGFyZ2V0SGl0SW1hZ2UMAAAAAOf/AAAAAOf/DAAAAAAyAAAAAAAyACEpaHR0cDovL3d3dy5yb2Jsb3guY29tL2Fzc2V0Lz9pZD0xMTU0MDAyMTUhC0ltYWdlQ29sb3IzBqoAAAMAAAAAAADgPwowXE3CACftP0AKgUIKAACAPwAAAAAAAAAACgAAAAAA'
+..'AIA/AAAAAAonRAq9DKmGPMjRfz8KLSgUPB30f7+7O4k8Cpi5Rj7QjES/iGsewAoAAIC/AAAAAAAAAAAKAD3dvUHCmz9A0pq+CsdECr0RKRQ8/dd/Pwr5qIY8HfR/vzRSHTwKAACAv2X/bjSZ/x41CmX/bjQAAIA/DEDssikBAAIAAgMEBQZAAgEXGBkaGxwdgBceHx0B'
+..'CQACBwgJCgsMDQ4PEBESExQVFgkgAgQAISIOIyQJJSYnAgEAAigpBAIAAiorJiwCAAAtAQgAAi4vMDEyMzQ1Njc4OTo7PD0HAQACPj8HAQACQBcHDAACQUJDCkQMRQ5GRxtISRJKS0wUTU5DT1BRCgEAUlNUCgQAAlVWMFcJFFhZDAoAAkFXCVpbXFBdW15DEl8UYFVh'
+..'YmNUCgQAAmRWMFcJFGVZDggAAkFXCVpbXFBdW15DEmYUZ2gKDwACaWprDmxtG1Ywbm9wUHFyc3RLdBR1dnd4eXp7T3x9CgIAfn+AgSwHAQAChCwHAQAChYYHCQAChwyISIkSikuLFIyNjo+QkZKTFAUAApSVlpeYmZqbnJMUAwACnZVyl56TFAQAAp+VoJeYm5yTFAQA'
+..'AqGVlpeim5wgFAUAAkEhIg6jVjAlpCwHAQACpaYHAgACp6ipqgcBAAKrrBwGAAKtWq5eQxKvFLCxIrIdCgACs1xQXkMStBS1tre4W7m6u7y9Q7IdCwACvlxQXkMSvxTAtsG4W7m6u7y9Q8JQsh0LAALDXFBeQxLEFMW2xrhbubq7vL1DwkOsHAYAAp9cUF5DEscUyMkw'
+..'siEKAAKfXFBeQxLKyTDLIrbMuM25ur1DrBwGAALOWs9cUF5DEtAU0awjBgAC0lpbXJxdrhLTFNSsIwYAAtVaW1ycXa4S1hTXrCMGAALYWltcnF2uEtkU17IjDAAC2lxQXkMS28kwyyK23Lhbud29Q8JD3iKsIwYAAt9aW1ycXa4S4BTUWSMKAALhXFBdrl5DEuIU48kw'
+..'VeTl5mLnAhGCFBGDCg==')
 for _,obj in pairs(Objects) do
 	obj.Parent = script or workspace
 end
