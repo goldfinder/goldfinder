@@ -1,3 +1,3 @@
 ### Languages:
-| Python3 | C | JS | Solidity |
+| Python | LuaU/Lua | C# | Skript |
 |----------|----------|----------|-----|
